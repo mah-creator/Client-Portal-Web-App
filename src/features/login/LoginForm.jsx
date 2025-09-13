@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router";
 import { useState } from "react";
 
 const roles = [
@@ -37,30 +36,11 @@ const roles = [
       </svg>
     ),
   },
-  // {
-  //   id: "admin",
-  //   title: "Admin",
-  //   subtitle: "System oversight",
-  //   icon: (
-  //     <svg
-  //       viewBox="0 0 24 24"
-  //       className="w-5 h-5"
-  //       fill="none"
-  //       stroke="currentColor"
-  //       strokeWidth="1.8"
-  //     >
-  //       <path d="M12 2l7 4v4c0 5-3 9-7 12-4-3-7-7-7-12V6l7-4z" />
-  //       <circle cx="12" cy="11" r="2" />
-  //     </svg>
-  //   ),
-  // },
 ];
 
 function LoginForm() {
   const [role, setRole] = useState("freelancer");
   const [form, setForm] = useState({ email: "", password: "" });
-
-  const navigate = useNavigate();
 
   return (
     <form className="mt-8" onSubmit={(e) => e.preventDefault()}>

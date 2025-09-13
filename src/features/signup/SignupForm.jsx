@@ -1,4 +1,24 @@
-function SignupForm() {
+import { useState } from "react";
+
+function SignupForm({ form, setForm, setSuccess }) {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    // 👉 Replace with real signup API call
+    console.log("User signed up:", form);
+
+    // Show success screen
+    setSuccess(true);
+  };
+
   return (
     <form className="space-y-4 mt-8" onSubmit={handleSubmit}>
       <div>

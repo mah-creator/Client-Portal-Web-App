@@ -4,6 +4,7 @@ import SignupHeader from "../features/signup/SignupHeader";
 import SignupForm from "../features/signup/SignupForm";
 
 export default function Signup() {
+  const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -11,28 +12,8 @@ export default function Signup() {
     confirmPassword: "",
   });
 
-  const [success, setSuccess] = useState(false);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    // 👉 Replace with real signup API call
-    console.log("User signed up:", form);
-
-    // Show success screen
-    setSuccess(true);
-  };
-
   if (success) {
-    return <SuccessSignUp />;
+    return <SuccessSignUp email={form.email} />;
   }
 
   return (
@@ -40,7 +21,7 @@ export default function Signup() {
       <div className="w-full max-w-md">
         <div className="bg-white/90 shadow-xl backdrop-blur-sm mx-auto p-8 rounded-3xl ring-1 ring-black/5">
           <SignupHeader />
-          <SignupForm />
+          <SignupForm form={form} setForm={setForm} setSuccess={setSuccess} />
         </div>
       </div>
     </div>

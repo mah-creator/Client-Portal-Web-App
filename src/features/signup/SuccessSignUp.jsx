@@ -1,4 +1,4 @@
-function SuccessSignUp() {
+function SuccessSignUp({ email }) {
   return (
     <div className="flex justify-center items-center bg-gradient-to-b from-sky-100 via-sky-50 to-sky-100 p-4 w-full min-h-screen">
       <div className="w-full max-w-md">
@@ -19,8 +19,8 @@ function SuccessSignUp() {
           </h1>
           <p className="mt-2 text-slate-600">
             We’ve sent a confirmation email to{" "}
-            <span className="font-medium text-slate-800">{form.email}</span>.
-            Please check your inbox to verify your account.
+            <span className="font-medium text-slate-800">{email}</span>. Please
+            check your inbox to verify your account.
           </p>
           <a
             href="/login"
