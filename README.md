@@ -1,18 +1,20 @@
-# Client Portal Web App
+# ClientPortalApi (ASP.NET Core) - Demo (SQLite)
 
-## 📌 Project Summary
+This is a demo ASP.NET Core Web API that supports the React client. It uses:
+- .NET 8 (net8.0)
+- EF Core with SQLite (clientportal.db)
+- JWT authentication (demo mode accepts any email/password and creates a user)
+- SignalR for notifications
+- File uploads saved to `wwwroot/uploads`
 
-The **Client Portal Web App** is a full-stack web application designed to simulate a real-world SaaS-like solution. It allows service providers (Admins) to interact with their clients, manage tasks or deliverables, exchange files, and communicate through a structured dashboard.
-
-This project is developed as part of a **Software Engineering course** to enhance practical skills in frontend, backend, and database development while working in a collaborative team environment.
-
----
-
-## 🎯 Objective
-
-To build a realistic yet simple client portal that supports:
-
-- Task management
-- File sharing
-- Messaging
-- Role-based access (Admin / Client)
+How to run:
+1. Install .NET 8 SDK.
+2. From project folder:
+   ```bash
+   dotnet restore
+   dotnet tool install --global dotnet-ef --version 8.0.0
+   dotnet ef migrations add Init
+   dotnet ef database update
+   dotnet run
+   ```
+3. API will run at `https://localhost:5001` or as configured.
