@@ -1,26 +1,58 @@
 import { useState } from "react";
+import { signUp } from "../../mocks/mockApi"; // ⬅️ adjust path
 
 function SignupForm({ form, setForm, setSuccess }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // basic validations
+    if (!form.role) {
+      setError("Please choose your role (freelancer or customer).");
+      return;
+    }
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match");
+      setError("Passwords do not match.");
+      return;
+    }
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters.");
       return;
     }
 
-    // 👉 Replace with real signup API call
-    console.log("User signed up:", form);
-
-    // Show success screen
-    setSuccess(true);
+    try {
+      setSubmitting(true);
+      // 🔗 call mock API – creates user in the right collection by role
+      await signUp({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        role: form.role,
+      });
+      // show the success screen (“We’ve sent a confirmation email …”)
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message || "Sign up failed.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <form className="space-y-4 mt-8" onSubmit={handleSubmit}>
+      {error && (
+        <div className="bg-rose-50 px-3 py-2 border border-rose-200 rounded-lg text-rose-700 text-sm">
+          {error}
+        </div>
+      )}
+
       <div>
         <label className="block font-medium text-slate-700 text-sm">Name</label>
         <input
@@ -79,11 +111,38 @@ function SignupForm({ form, setForm, setSuccess }) {
         />
       </div>
 
+      {/* Role selection (choose here, not at login) */}
+      <label className="block font-medium text-slate-700 text-sm">I am a</label>
+      <div className="gap-2 grid sm:grid-cols-2 mt-2">
+        {["freelancer", "customer"].map((r) => (
+          <label
+            key={r}
+            className={
+              "flex cursor-pointer items-center gap-2 rounded-xl border p-3 " +
+              (form.role === r
+                ? "border-blue-500 bg-blue-50"
+                : "border-slate-200")
+            }
+          >
+            <input
+              type="radio"
+              name="role"
+              value={r}
+              checked={form.role === r}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="accent-blue-600"
+            />
+            <span className="capitalize">{r}</span>
+          </label>
+        ))}
+      </div>
+
       <button
         type="submit"
-        className="bg-blue-600 hover:bg-blue-700 shadow-sm mt-2 px-4 py-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 w-full text-white transition"
+        disabled={submitting}
+        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 shadow-sm mt-2 px-4 py-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 w-full text-white transition"
       >
-        Sign Up
+        {submitting ? "Creating account…" : "Sign Up"}
       </button>
 
       <p className="mt-4 text-slate-600 text-sm text-center">

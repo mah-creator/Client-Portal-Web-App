@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
+import { useAuth } from "../../contexts/AuthContext";
 
 const roles = [
   {
@@ -41,9 +43,39 @@ const roles = [
 function LoginForm() {
   const [role, setRole] = useState("freelancer");
   const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const { login } = useAuth();
+
+  const navigate = useNavigate();
+
+  // LoginForm.jsx (essentials)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      const user = await login(form.email.trim(), form.password); // 👈 no role
+      if (user.role === "freelancer")
+        navigate("/freelancer", { replace: true });
+      else if (user.role === "customer")
+        navigate("/customer", { replace: true });
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <form className="mt-8" onSubmit={(e) => e.preventDefault()}>
+    <form className="mt-8" onSubmit={handleSubmit}>
+      {error && (
+        <div className="bg-rose-50 mb-3 px-3 py-2 border border-rose-200 rounded-lg text-rose-700 text-sm">
+          {error}
+        </div>
+      )}
+
       <label className="block font-medium text-slate-700 text-sm">Email</label>
       <input
         type="email"
@@ -66,8 +98,7 @@ function LoginForm() {
         required
       />
 
-      <p className="mt-5 font-semibold text-slate-700 text-sm">Login as:</p>
-
+      {/* <p className="mt-5 font-semibold text-slate-700 text-sm">Login as:</p>
       <div
         role="radiogroup"
         aria-label="Login role"
@@ -108,24 +139,21 @@ function LoginForm() {
             </button>
           );
         })}
-      </div>
+      </div> */}
 
       <button
         type="submit"
-        className="bg-blue-600 hover:bg-blue-700 shadow-sm mt-6 px-4 py-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 w-full text-white transition"
-        onClick={() => {
-          if (role === "freelancer") navigate("/freelancer");
-          else if (role === "customer") navigate("/customer");
-          else navigate("/admin");
-        }}
+        disabled={submitting}
+        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 shadow-sm mt-6 px-4 py-2.5 rounded-xl w-full text-white transition"
       >
-        Sign In
+        {submitting ? "Signing in…" : "Sign In"}
       </button>
+
       <p className="mt-4 text-slate-600 text-sm text-center">
         Don’t have an account?{" "}
         <a
           onClick={() => navigate("/signup")}
-          className="font-medium text-blue-600 hover:text-blue-700"
+          className="font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
         >
           Sign up
         </a>
