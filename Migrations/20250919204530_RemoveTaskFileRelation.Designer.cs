@@ -3,6 +3,7 @@ using System;
 using ClientPortalApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClientPortalApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250919204530_RemoveTaskFileRelation")]
+    partial class RemoveTaskFileRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -80,6 +83,8 @@ namespace ClientPortalApi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("TaskId");
 
                     b.HasIndex("UploaderId");
 
@@ -221,6 +226,10 @@ namespace ClientPortalApi.Migrations
                         .WithMany()
                         .HasForeignKey("ProjectId");
 
+                    b.HasOne("ClientPortalApi.Models.TaskItem", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId");
+
                     b.HasOne("ClientPortalApi.Models.User", "Uploader")
                         .WithMany()
                         .HasForeignKey("UploaderId")
@@ -228,6 +237,8 @@ namespace ClientPortalApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Project");
+
+                    b.Navigation("Task");
 
                     b.Navigation("Uploader");
                 });

@@ -6,6 +6,7 @@ using ClientPortalApi.Models;
 using ClientPortalApi.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using TaskStatus = ClientPortalApi.Models.TaskStatus;
 namespace ClientPortalApi.Controllers
 {
     [ApiController]
@@ -24,7 +25,19 @@ namespace ClientPortalApi.Controllers
             var memberProjIds = _db.ProjectMembers.Where(pm => pm.UserId == userId).Select(pm => pm.ProjectId);
             var member = _db.Projects.Where(p => memberProjIds.Contains(p.Id));
             var projects = await owned.Union(member).ToListAsync();
-            return Ok(projects.Select(p => new ProjectDto(p.Id, p.Title, p.Description, p.OwnerId, p.Status.ToString(), p.CreatedAt)));
+            return Ok(projects.Select(
+                p => new ProjectDto(
+                    p.Id, p.Title, p.Description, p.OwnerId, Enum.GetName(p.Status), p.CreatedAt, p.DueDate, 
+                    _db.TaskItems.Where(t => t.ProjectId == p.Id).Count(), 
+                    _db.TaskItems.Where(t => t.ProjectId == p.Id)
+                        .Where(t => t.Status == TaskStatus.Done).Count(), 
+                    _db.Users.FirstOrDefault(u => u.Id == p.OwnerId)?.Name!,
+                    _db.Users.FirstOrDefault(u => u.Id ==
+						_db.ProjectMembers
+						.Where(mem => mem!.ProjectId == p.Id && mem!.Role == MemberRole.Viewer)
+                        .FirstOrDefault()!.UserId
+                    )?.Email!
+                )));
         }
 
         [HttpPost]
@@ -38,7 +51,8 @@ namespace ClientPortalApi.Controllers
             };
             _db.Projects.Add(project);
             await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(Get), new { id = project.Id }, new ProjectDto(project.Id, project.Title, project.Description, project.OwnerId, project.Status.ToString(), project.CreatedAt));
+            return CreatedAtAction(nameof(Get), new { id = project.Id }, new ProjectDto(project.Id, project.Title, project.Description, project.OwnerId, project.Status.ToString(), project.CreatedAt, project.DueDate,
+                Freelancer: project.OwnerId));
         }
 
         [HttpGet("{id}")]

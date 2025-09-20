@@ -6,6 +6,8 @@ using ClientPortalApi.Data;
 using ClientPortalApi.Services;
 using ClientPortalApi.Hubs;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity;
+using ClientPortalApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -13,9 +15,10 @@ var configuration = builder.Configuration;
 // Add services
 
 builder.Services.AddCors(options =>
-  options.AddPolicy("AllowDev", p => p.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:8080"))
+  options.AddPolicy("AllowDev", p => p.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:8081"))
 );
 
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
@@ -98,7 +101,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
-    DbSeeder.SeedAsync(db).GetAwaiter().GetResult();
+    DbSeeder.SeedAsync(db, new PasswordHasher<User>()).GetAwaiter().GetResult();
 }
 
 if (app.Environment.IsDevelopment())
@@ -111,7 +114,6 @@ app.UseCors("AllowDev");
 
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors("AllowReactDev");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

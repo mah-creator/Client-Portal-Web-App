@@ -1,6 +1,10 @@
 namespace ClientPortalApi.Models
 {
-    public enum TaskStatus { Todo, InProgress, Done, Canceled }
+    public enum TaskStatus { 
+        
+
+        Todo, InProgress, Done, Canceled 
+    }
 
     public class TaskItem
     {
@@ -11,6 +15,7 @@ namespace ClientPortalApi.Models
         public string? Description { get; set; }
         public TaskStatus Status { get; set; } = TaskStatus.Todo;
         public DateTime? DueDate { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }
