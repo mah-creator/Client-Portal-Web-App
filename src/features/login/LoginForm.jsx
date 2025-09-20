@@ -61,6 +61,9 @@ function LoginForm() {
         navigate("/freelancer", { replace: true });
       else if (user.role === "customer")
         navigate("/customer", { replace: true });
+      else {
+        navigate("/admin", { replace: true });
+      }
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {

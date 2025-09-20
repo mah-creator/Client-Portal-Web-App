@@ -1,8 +1,6 @@
-// src/mocks/mockApi.js
-import { freelancers, customers } from "./mockDb";
+import { freelancers, customers, admins } from "./mockDb";
 
-// helper: combine users for auth
-const allUsers = [...freelancers, ...customers];
+const allUsers = [...freelancers, ...customers, ...admins];
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -14,7 +12,6 @@ export async function signUp(
 ) {
   await sleep(delayMs);
 
-  // Basic validations (frontend safety; real checks happen server-side)
   if (!name?.trim() || !email?.trim() || !password || !role) {
     throw new Error("Missing required fields.");
   }
@@ -22,7 +19,6 @@ export async function signUp(
     throw new Error("Password must be at least 6 characters.");
   }
 
-  // Generate a temporary ID (just for the success screen)
   const initials = name
     .split(" ")
     .map((s) => s[0] || "")
@@ -31,9 +27,8 @@ export async function signUp(
     .toUpperCase();
 
   const idPrefix = role === "freelancer" ? "u" : "c";
-  const id = `${idPrefix}${Date.now()}`; // e.g., u1699999999999
+  const id = `${idPrefix}${Date.now()}`;
 
-  // Return what a real API would typically return
   return { id, name: name.trim(), initials, role, email: email.trim() };
 }
 
@@ -45,7 +40,6 @@ export async function login(email, password, { delayMs = 400 } = {}) {
   return { id, name, initials, role, email };
 }
 
-// ---------- Dashboards ----------
 export function fetchFreelancerDashboard(freelancerId, { delayMs = 500 } = {}) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -71,6 +65,22 @@ export function fetchCustomerDashboard(customerId, { delayMs = 500 } = {}) {
         projects: c.projects,
         notifications: c.notifications,
         files: c.files,
+      });
+    }, delayMs);
+  });
+}
+
+export function fetchAdminDashboard(adminId, { delayMs = 500 } = {}) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const a = admins.find((x) => x.id === adminId);
+      if (!a) return reject(new Error("Admin not found"));
+      resolve({
+        user: { id: a.id, name: a.name, role: a.role, initials: a.initials },
+        stats: a.stats,
+        recentUsers: a.recentUsers,
+        alerts: a.alerts,
+        activities: a.activities,
       });
     }, delayMs);
   });

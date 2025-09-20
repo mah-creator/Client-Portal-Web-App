@@ -204,3 +204,100 @@ export const customers = [
     ],
   },
 ];
+
+export const admins = [
+  {
+    id: "a1",
+    role: "admin",
+    name: "Admin",
+    initials: "AD",
+    email: "admin@example.com",
+    password: "admin123",
+
+    stats: {
+      totalUsers: { value: 124, delta: "+12%" },
+      activeProjects: { value: 45, delta: "+8%" },
+      systemAlerts: { value: 3, delta: "-2" },
+      storageUsed: { value: 68, delta: "+5%" },
+    },
+
+    recentUsers: [
+      {
+        id: "u1",
+        name: "John Doe",
+        email: "john@example.com",
+        role: "freelancer",
+        status: "Active",
+      },
+      {
+        id: "c1",
+        name: "Jane Smith",
+        email: "jane@company.com",
+        role: "customer",
+        status: "Active",
+      },
+      {
+        id: "u3",
+        name: "Mike Johnson",
+        email: "mike@freelance.com",
+        role: "freelancer",
+        status: "Suspended",
+      },
+      {
+        id: "u4",
+        name: "Sarah Wilson",
+        email: "sarah@design.com",
+        role: "freelancer",
+        status: "Active",
+      },
+    ],
+
+    alerts: [
+      {
+        id: "al1",
+        level: "high",
+        title: "Multiple failed login attempts from IP 192.168.1.100",
+        meta: "",
+        time: "10 min ago",
+      },
+      {
+        id: "al2",
+        level: "medium",
+        title: "Storage usage approaching 80% capacity",
+        meta: "",
+        time: "2 hours ago",
+      },
+      {
+        id: "al3",
+        level: "low",
+        title: "Database response time increased by 15%",
+        meta: "",
+        time: "4 hours ago",
+      },
+    ],
+
+    activities: [
+      {
+        id: "ac1",
+        user: "John Doe",
+        text: "file uploaded in",
+        project: "E-commerce Website",
+        time: "1 hour ago",
+      },
+      {
+        id: "ac2",
+        user: "Sarah Wilson",
+        text: "task completed in",
+        project: "Mobile App",
+        time: "3 hours ago",
+      },
+      {
+        id: "ac3",
+        user: "Mike Johnson",
+        text: "comment added in",
+        project: "Brand Identity",
+        time: "5 hours ago",
+      },
+    ],
+  },
+];
