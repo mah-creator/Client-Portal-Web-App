@@ -6,22 +6,25 @@ import Freelancer from "./pages/Freelancer";
 import Customer from "./pages/Customer";
 import Admin from "./pages/Admin";
 import Signup from "./pages/Signup";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route index element={<Navigate replace to="home" />} />
-          <Route path="home" element={<Home />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
-          <Route path="freelancer" element={<Freelancer />} />
-          <Route path="customer" element={<Customer />} />
-          <Route path="admin" element={<Admin />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route index element={<Navigate replace to="home" />} />
+            <Route path="home" element={<Home />} />
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
+            <Route path="freelancer" element={<Freelancer />} />
+            <Route path="customer" element={<Customer />} />
+            <Route path="admin" element={<Admin />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
