@@ -36,12 +36,24 @@ namespace ClientPortalApi.Controllers
 
         [HttpGet("task/{Id}")]
         [ProducesResponseType(typeof(FileResponse), StatusCodes.Status200OK)]
-		public async Task<IActionResult> Get(string Id)
+        public async Task<IActionResult> GetTaskFiles(string Id)
         {
-			if (!_db.TaskItems.Any(t => t.Id == Id)) return BadRequest("Task wasn't found");
+            if (!_db.TaskItems.Any(t => t.Id == Id)) return BadRequest("Task wasn't found");
+
+            var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
+                .Where(f => f.TaskId == Id).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+
+            return Ok(files);
+        }
+        
+        [HttpGet("project/{Id}/recent")]
+        [ProducesResponseType(typeof(FileResponse), StatusCodes.Status200OK)]
+		public async Task<IActionResult> GetRecentProjectFiles(string Id)
+        {
+			if (!_db.Projects.Any(p => p.Id == Id)) return BadRequest("Project wasn't found");
 
 			var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.TaskId == Id).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.ProjectId == Id && f.UploadedAt.AddHours(5) < DateTime.UtcNow).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
 
             return Ok(files);
         }

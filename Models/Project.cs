@@ -1,6 +1,6 @@
 namespace ClientPortalApi.Models
 {
-    public enum ProjectStatus { Active, Archived, Deleted }
+    public enum ProjectStatus { Active, Completed, Deleted }
 
     public class Project
     {
