@@ -10,7 +10,7 @@ namespace ClientPortalApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize]
+    [Authorize]
     public class FilesController : ControllerBase
     {
         private readonly IFileService _fileService;
@@ -22,7 +22,7 @@ namespace ClientPortalApi.Controllers
         public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string? projectId, [FromForm] string? taskId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null) return Unauthorized("");
+            
             if (file == null) return BadRequest("File required");
             if (!_db.Projects.Any(p => p.Id == projectId)) return BadRequest("Project wasn't found");
             if (!_db.TaskItems.Any(t => t.Id == taskId)) return BadRequest("Task wasn't found");
@@ -45,15 +45,35 @@ namespace ClientPortalApi.Controllers
 
             return Ok(files);
         }
-        
-        [HttpGet("project/{Id}/recent")]
+
+        [HttpGet("project/{Id}")]
         [ProducesResponseType(typeof(FileResponse), StatusCodes.Status200OK)]
-		public async Task<IActionResult> GetRecentProjectFiles(string Id)
+		public async Task<IActionResult> GetProjectFiles(string Id)
         {
 			if (!_db.Projects.Any(p => p.Id == Id)) return BadRequest("Project wasn't found");
 
 			var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.ProjectId == Id).AsEnumerable().Where(f => f.UploadedAt.Add(TimeSpan.FromHours(5)) > DateTime.UtcNow).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.ProjectId == Id).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+
+            return Ok(files);
+        }
+
+        [HttpGet("recent")]
+        [ProducesResponseType(typeof(FileResponse), StatusCodes.Status200OK)]
+		public async Task<IActionResult> GetRecentFiles()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized("");
+
+            var files = _db.ProjectMembers
+                .Where(mem => mem.UserId == userId)
+                .Join(_db.Files, mem => mem.ProjectId, f => f.ProjectId, (mem, f) => f)
+                .AsEnumerable().Where(f => f.UploadedAt.Add(TimeSpan.FromHours(2)) > DateTime.UtcNow)
+                .Select(f => new FileResponse(
+                    f.Filename,
+                    f.Project == null ? null : f.Project.Title, f.Size,
+                    f.Uploader == null ? null : f.Uploader.Name,
+                    f.UploadedAt, f.Path));
 
             return Ok(files);
         }

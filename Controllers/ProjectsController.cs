@@ -19,7 +19,6 @@ namespace ClientPortalApi.Controllers
 
         [HttpGet]
         public async Task<IActionResult> List() {
-            //var userId = User.Claims.ToList().Where(c => c.Type == ClaimTypes.NameIdentifier).FirstOrDefault();
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var owned = _db.Projects.Where(p => p.OwnerId == userId);
             var memberProjIds = _db.ProjectMembers.Where(pm => pm.UserId == userId).Select(pm => pm.ProjectId);
@@ -41,9 +40,12 @@ namespace ClientPortalApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateProjectDto dto) {
+        [Authorize(Roles = nameof(Role.Freelancer))]
+        public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
+        {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var project = new Project {
+            var project = new Project
+            {
                 Title = dto.Title,
                 Description = dto.Description,
                 OwnerId = userId,
@@ -51,6 +53,15 @@ namespace ClientPortalApi.Controllers
             };
             _db.Projects.Add(project);
             await _db.SaveChangesAsync();
+
+            _db.ProjectMembers.Add(new ProjectMember
+            {
+                ProjectId = project.Id,
+                UserId = userId,
+                Role = MemberRole.Collaborator
+            });
+            await _db.SaveChangesAsync();
+
             return CreatedAtAction(nameof(Get), new { id = project.Id }, new ProjectDto(project.Id, project.Title, project.Description, project.OwnerId, project.Status.ToString(), project.CreatedAt, project.DueDate,
                 Freelancer: project.OwnerId));
         }
@@ -76,15 +87,12 @@ namespace ClientPortalApi.Controllers
         [HttpPost("{id}/invite")]
         public async Task<IActionResult> Invite(string id, [FromBody] string email) {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null) {
-                user = new User { Email = email, Name = email.Split('@')[0] };
-                _db.Users.Add(user);
-                await _db.SaveChangesAsync();
-            }
+            if (user == null) return NotFound($"User '{email}' wasn't found");
 
             if (await _db.ProjectMembers.AnyAsync(pm => pm.ProjectId == id && pm.UserId == user.Id)) {
                 return BadRequest("Already invited");
             }
+
             _db.ProjectMembers.Add(new ProjectMember { ProjectId = id, UserId = user.Id, Role = MemberRole.Viewer });
             await _db.SaveChangesAsync();
             return Ok();

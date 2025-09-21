@@ -45,9 +45,9 @@ namespace ClientPortalApi.Controllers
         public async Task<IActionResult> GetPendingTasks()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null) return Unauthorized();
+            if (userId == null) return Unauthorized("");
 
-            var projects = _db.ProjectMembers.Where(mem => mem.UserId == userId && mem.Role == MemberRole.Collaborator);
+            var projects = _db.ProjectMembers.Where(mem => mem.UserId == userId);
 
             var pendingTasks = projects
             .Join(_db.TaskItems.Where(t => t.Status == TaskStatus.InProgress || t.Status == TaskStatus.Todo),
