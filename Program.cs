@@ -15,7 +15,7 @@ var configuration = builder.Configuration;
 // Add services
 
 builder.Services.AddCors(options =>
-  options.AddPolicy("AllowDev", p => p.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:8081"))
+  options.AddPolicy("AllowDev", p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin())
 );
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

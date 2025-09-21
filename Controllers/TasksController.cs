@@ -118,7 +118,7 @@ namespace ClientPortalApi.Controllers
         }
 
         [HttpGet]
-        [Route("api/tasks/pending")]
+        [Route("pending")]
         [Authorize(Roles = nameof(Role.Freelancer))]
         public async Task<IActionResult> GetPendingTasks()
         {
