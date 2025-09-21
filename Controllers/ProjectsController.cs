@@ -57,9 +57,20 @@ namespace ClientPortalApi.Controllers
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id) {
-            var project = await _db.Projects.Include(p=>p.Members).FirstOrDefaultAsync(p => p.Id == id);
-            if (project == null) return NotFound();
-            return Ok(project);
+            var p = await _db.Projects.Include(p=>p.Members).FirstOrDefaultAsync(p => p.Id == id);
+            if (p == null) return NotFound();
+            return Ok(new ProjectDto(
+                    p.Id, p.Title, p.Description, p.OwnerId, Enum.GetName(p.Status), p.CreatedAt, p.DueDate, 
+                    _db.TaskItems.Where(t => t.ProjectId == p.Id).Count(), 
+                    _db.TaskItems.Where(t => t.ProjectId == p.Id)
+                        .Where(t => t.Status == TaskStatus.Done).Count(), 
+                    _db.Users.FirstOrDefault(u => u.Id == p.OwnerId)?.Name!,
+                    _db.Users.FirstOrDefault(u => u.Id ==
+						_db.ProjectMembers
+						.Where(mem => mem!.ProjectId == p.Id && mem!.Role == MemberRole.Viewer)
+                        .FirstOrDefault()!.UserId
+                    )?.Email!
+                ));
         }
 
         [HttpPost("{id}/invite")]

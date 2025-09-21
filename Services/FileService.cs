@@ -20,14 +20,15 @@ namespace ClientPortalApi.Services
                 await file.CopyToAsync(stream);
             }
 
-            var entity = new FileEntity {
+            var entity = new FileEntity
+            {
                 UploaderId = uploaderId,
                 ProjectId = projectId,
                 TaskId = taskId,
                 Filename = file.FileName,
                 Path = $"/uploads/{safeName}",
                 Size = file.Length,
-                Mime = file.ContentType
+                Mime = file.ContentType,
             };
             _db.Files.Add(entity);
             await _db.SaveChangesAsync();

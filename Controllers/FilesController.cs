@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ClientPortalApi.Services;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using ClientPortalApi.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,7 @@ namespace ClientPortalApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    // [Authorize]
     public class FilesController : ControllerBase
     {
         private readonly IFileService _fileService;
@@ -23,6 +22,7 @@ namespace ClientPortalApi.Controllers
         public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string? projectId, [FromForm] string? taskId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized("");
             if (file == null) return BadRequest("File required");
             if (!_db.Projects.Any(p => p.Id == projectId)) return BadRequest("Project wasn't found");
             if (!_db.TaskItems.Any(t => t.Id == taskId)) return BadRequest("Task wasn't found");
@@ -53,7 +53,7 @@ namespace ClientPortalApi.Controllers
 			if (!_db.Projects.Any(p => p.Id == Id)) return BadRequest("Project wasn't found");
 
 			var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.ProjectId == Id && f.UploadedAt.AddHours(5) < DateTime.UtcNow).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.ProjectId == Id).AsEnumerable().Where(f => f.UploadedAt.Add(TimeSpan.FromHours(5)) > DateTime.UtcNow).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
 
             return Ok(files);
         }
