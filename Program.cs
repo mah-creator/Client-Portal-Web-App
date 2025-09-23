@@ -13,11 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services
-
-builder.Services.AddCors(options =>
-  options.AddPolicy("AllowDev", p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin())
-);
-
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddControllers();
@@ -53,7 +48,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactDev", p =>
     {
         p.WithOrigins(configuration["ReactClientUrl"] ?? "http://localhost:3000")
-         .AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+         .AllowAnyHeader().AllowAnyMethod().AllowCredentials().AllowCredentials();
     });
 });
 
@@ -110,13 +105,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowDev");
+
+
+app.UseCors("AllowReactDev");
+
+
 
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<NotificationsHub>("/hubs/notifications").RequireCors("AllowReactDev");
 app.MapControllers();
-app.MapHub<NotificationsHub>("/hubs/notifications");
+
 
 app.Run();

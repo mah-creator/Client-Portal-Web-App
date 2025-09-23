@@ -27,11 +27,11 @@ namespace ClientPortalApi.Controllers
         [HttpGet]
         public async Task<IActionResult> List(string projectId)
         {
-            var tasks = _db.TaskItems.Where(t => t.ProjectId == projectId)
+            var tasks = _db.TaskItems.OrderBy(t => t.CreatedAt).Where(t => t.ProjectId == projectId)
                 .Select(t =>
                     new TaskResponse(
                         t.Id, t.ProjectId, t.Title, t.Description, Enum.GetName(t.Status), t.CreatedAt, DateTime.Now,
-                        _db.Comments.Include(c => c.User).Where(c => c.TaskId == t.Id).Select(c =>
+                        _db.Comments.OrderBy(c => c.CreatedAt).Include(c => c.User).Where(c => c.TaskId == t.Id).Select(c =>
                             new CommentResponse(c.Id.ToString(), c.User.Name, c.Body, c.CreatedAt)).ToList(), t.DueDate,
                         _db.Users.FirstOrDefault(u => u.Id == _db.Projects.FirstOrDefault(p => p.Id == projectId).OwnerId).Name));
 
