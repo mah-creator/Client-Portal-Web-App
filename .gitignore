@@ -1,50 +1,24 @@
-# ====================================
-# Node / React (Frontend)
-# ====================================
-node_modules/
-build/
-dist/
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-.env
+pnpm-debug.log*
+lerna-debug.log*
 
-# ====================================
-# Laravel / PHP (Backend)
-# ====================================
-vendor/
-storage/
-bootstrap/cache/
-.env
-.env.backup
-composer.lock
+node_modules
+dist
+dist-ssr
+*.local
 
-# ====================================
-# IDE & OS Specific
-# ====================================
-.vscode/
-.idea/
-*.swp
-*.swo
-*.DS_Store
-Thumbs.db
-
-# ====================================
-# Logs & Temporary Files
-# ====================================
-*.log
-*.tmp
-*.temp
-*.bak
-
-# ====================================
-# Testing & Coverage
-# ====================================
-coverage/
-.phpunit.result.cache
-
-# ====================================
-# Misc
-# ====================================
-public/storage
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
