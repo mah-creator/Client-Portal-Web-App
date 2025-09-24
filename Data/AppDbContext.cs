@@ -30,6 +30,12 @@ namespace ClientPortalApi.Data
             builder.Entity<Project>().Property(p => p.Id).ValueGeneratedNever();
             builder.Entity<TaskItem>().Property(t => t.Id).ValueGeneratedNever();
             builder.Entity<Comment>().Property(c => c.Id).ValueGeneratedNever();
-        }
-    }
+            builder.Entity<Notification>().HasKey(n => n.Id);
+            builder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId);
+
+                    }
+                }
 }
