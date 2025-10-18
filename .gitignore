@@ -17,7 +17,7 @@
 *.cache
 
 # Vite
-/dist/
+#/dist/
 /node_modules/
 .env
 .env.*local
