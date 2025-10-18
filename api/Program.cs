@@ -48,7 +48,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactDev", p =>
     {
         p.WithOrigins(configuration["ReactClientUrl"] ?? "http://localhost:3000")
-         .AllowAnyHeader().AllowAnyMethod().AllowCredentials().AllowCredentials();
+         .AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
     });
 });
 

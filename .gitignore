@@ -1,24 +1,28 @@
-# Logs
-logs
+# .NET
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.pdb
+*.tmp
+*.vs/
+.vs/
 *.log
+*.bak
+*.resharper
+*.dotsettings
+*.ncrunch*
+*.pid
+*.opendb
+*.cache
+
+# Vite
+/dist/
+/node_modules/
+.env
+.env.*local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.parcel-cache/
+.vite/
