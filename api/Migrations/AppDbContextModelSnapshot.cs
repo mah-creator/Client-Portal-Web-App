@@ -86,6 +86,31 @@ namespace ClientPortalApi.Migrations
                     b.ToTable("Files");
                 });
 
+            modelBuilder.Entity("ClientPortalApi.Models.Profile", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Profile");
+                });
+
             modelBuilder.Entity("ClientPortalApi.Models.Project", b =>
                 {
                     b.Property<string>("Id")
@@ -232,6 +257,15 @@ namespace ClientPortalApi.Migrations
                     b.Navigation("Uploader");
                 });
 
+            modelBuilder.Entity("ClientPortalApi.Models.Profile", b =>
+                {
+                    b.HasOne("ClientPortalApi.Models.User", null)
+                        .WithOne("Profile")
+                        .HasForeignKey("ClientPortalApi.Models.Profile", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ClientPortalApi.Models.ProjectMember", b =>
                 {
                     b.HasOne("ClientPortalApi.Models.Project", null)
@@ -255,6 +289,12 @@ namespace ClientPortalApi.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("ClientPortalApi.Models.User", b =>
+                {
+                    b.Navigation("Profile")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

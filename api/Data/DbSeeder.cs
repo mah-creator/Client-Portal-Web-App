@@ -11,16 +11,19 @@ namespace ClientPortalApi.Data
         {
             if (!db.Users.Any())
             {
-				var admin = new User { Email = "admin@local.com", Name = "Yousif Khalil", Role = Role.Admin };
+				var admin = new User { Email = "admin2@local.com", Name = "Yousif Khalil", Role = Role.Admin };
 				admin.PasswordHash = hasher.HashPassword(admin, "123");
-				var freelancer = new User { Email = "freelancer@local.com", Name = "Abedalla Jamal", Role = Role.Freelancer };
+
+				var freelancer = new User { Email = "freelancer2@local.com", Name = "Abedalla Jamal", Role = Role.Freelancer };
 				freelancer.PasswordHash = hasher.HashPassword(freelancer, "123");
-				var customer = new User { Email = "customer@local.com", Name = "Mahmoud Tahrawi", Role = Role.Customer };
+
+				var customer = new User { Email = "customer2@local.com", Name = "Mahmoud Tahrawi", Role = Role.Customer };
 				customer.PasswordHash = hasher.HashPassword(customer, "123");
+
                 db.Users.AddRange(admin, freelancer, customer);
                 await db.SaveChangesAsync();
 
-                var p = new Project { Title = "Demo Project", Description = "Seeded", OwnerId = freelancer.Id };
+                var p = new Project { Title = "Demo Project2", Description = "Seeded", OwnerId = freelancer.Id };
                 db.Projects.Add(p);
                 await db.SaveChangesAsync();
 

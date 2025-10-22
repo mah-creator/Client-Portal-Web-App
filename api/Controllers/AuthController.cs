@@ -6,6 +6,7 @@ using ClientPortalApi.DTOs;
 using ClientPortalApi.Services;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace ClientPortalApi.Controllers
 {
@@ -58,6 +59,32 @@ namespace ClientPortalApi.Controllers
             await _db.SaveChangesAsync();
 
             return await Login(new LoginRequest(req.Email, req.Password));
+		}
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
+        {
+			var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (userId == null)
+				return Problem(title: "Invalid user");
+
+			var user = _db.Users.Include(x => x.Profile).FirstOrDefault(u => u.Id == userId);
+
+			if (user == null) return Problem(title: "User wasn't found");
+
+            var oldPassVerified = _hasher
+                .VerifyHashedPassword(user, user.PasswordHash, req.OldPassword)
+                .HasFlag(PasswordVerificationResult.Success);
+
+            if (!oldPassVerified)
+                return Problem(title: "Incorrect password");
+
+            var newPassHash = _hasher.HashPassword(user, req.NewPassword);
+            user.PasswordHash = newPassHash;
+
+            await _db.SaveChangesAsync();
+
+            return Ok();
 		}
 	}
 }

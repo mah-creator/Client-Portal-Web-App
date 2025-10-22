@@ -6,13 +6,32 @@ namespace ClientPortalApi.Models
 
     public class User
     {
-        [Key]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+		public User()
+		{
+            Id = Guid.NewGuid().ToString();
+            Profile = new Profile { Id = Id };
+		}
+		[Key]
+        public string Id { get; set; }
         public string? Name { get; set; }
         public string Email { get; set; } = null!;
         public string PasswordHash { get; set; } = "";
         public Role Role { get; set; } = Role.Customer;
         public bool IsSuspended { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        [Required]
+        public Profile Profile { get; set; }
+    }
+
+    public class Profile
+    {
+        public string Id { get; set; }
+        public string? Bio { get; set; }
+        public string? Phone {  get; set; }
+        public string? ImageUrl { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+		public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
     }
 }
