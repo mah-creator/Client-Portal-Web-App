@@ -29,7 +29,7 @@ namespace ClientPortalApi.Models
         public string Id { get; set; }
         public string? Bio { get; set; }
         public string? Phone {  get; set; }
-        public string? ImageUrl { get; set; }
+        public string? AvatarPath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 		public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

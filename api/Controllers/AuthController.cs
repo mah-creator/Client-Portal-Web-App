@@ -73,7 +73,7 @@ namespace ClientPortalApi.Controllers
 			if (user == null) return Problem(title: "User wasn't found");
 
             var oldPassVerified = _hasher
-                .VerifyHashedPassword(user, user.PasswordHash, req.OldPassword)
+                .VerifyHashedPassword(user, user.PasswordHash, req.CurrentPassword)
                 .HasFlag(PasswordVerificationResult.Success);
 
             if (!oldPassVerified)
