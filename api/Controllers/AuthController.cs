@@ -44,7 +44,7 @@ namespace ClientPortalApi.Controllers
         public async Task<IActionResult> Signup([FromBody] SignupRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.Email)) return BadRequest("Email required");
-            if (_db.Users.Where(u => u.Email == req.Email).Any()) return BadRequest("Dumplicate email");
+            if (_db.Users.Where(u => u.Email == req.Email).Any()) return BadRequest("Duplicate email");
             if (!Enum.TryParse<Role>(req.Role, out Role role)) return BadRequest("Invalid role");
 
             var user = new User
@@ -66,18 +66,18 @@ namespace ClientPortalApi.Controllers
         {
 			var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 			if (userId == null)
-				return Problem(title: "Invalid user");
+				return BadRequest("Invalid user");
 
 			var user = _db.Users.Include(x => x.Profile).FirstOrDefault(u => u.Id == userId);
 
-			if (user == null) return Problem(title: "User wasn't found");
+			if (user == null) return BadRequest("User wasn't found");
 
             var oldPassVerified = _hasher
                 .VerifyHashedPassword(user, user.PasswordHash, req.CurrentPassword)
                 .HasFlag(PasswordVerificationResult.Success);
 
             if (!oldPassVerified)
-                return Problem(title: "Incorrect password");
+                return BadRequest("Incorrect password");
 
             var newPassHash = _hasher.HashPassword(user, req.NewPassword);
             user.PasswordHash = newPassHash;

@@ -5,6 +5,8 @@ using System.Security.Claims;
 using ClientPortalApi.Data;
 using Microsoft.EntityFrameworkCore;
 using ClientPortalApi.DTOs;
+using System.Net.Http.Headers;
+using System.Net;
 
 namespace ClientPortalApi.Controllers
 {
@@ -31,7 +33,7 @@ namespace ClientPortalApi.Controllers
             var projectTitle = _db.Projects.Find(projectId)?.Title;
             var uploaderName = _db.Users.Find(entity.UploaderId)?.Name;
 
-            return Ok(new FileResponse(entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path));
+            return Ok(new FileResponse(entity.Id, entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path));
         }
 
         [HttpGet("task/{Id}")]
@@ -41,7 +43,7 @@ namespace ClientPortalApi.Controllers
             if (!_db.TaskItems.Any(t => t.Id == Id)) return BadRequest("Task wasn't found");
 
             var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.TaskId == Id).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.TaskId == Id).Select(f => new FileResponse(f.Id, f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
 
             return Ok(files);
         }
@@ -53,7 +55,7 @@ namespace ClientPortalApi.Controllers
 			if (!_db.Projects.Any(p => p.Id == Id)) return BadRequest("Project wasn't found");
 
 			var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.ProjectId == Id).Select(f => new FileResponse(f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.ProjectId == Id).Select(f => new FileResponse(f.Id, f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
 
             return Ok(files);
         }
@@ -70,6 +72,7 @@ namespace ClientPortalApi.Controllers
                 .Join(_db.Files, mem => mem.ProjectId, f => f.ProjectId, (mem, f) => f)
                 .AsEnumerable().Where(f => f.UploadedAt.Add(TimeSpan.FromHours(2)) > DateTime.UtcNow)
                 .Select(f => new FileResponse(
+                    f.Id,
                     f.Filename,
                     f.Project == null ? null : f.Project.Title, f.Size,
                     f.Uploader == null ? null : f.Uploader.Name,
@@ -77,5 +80,21 @@ namespace ClientPortalApi.Controllers
 
             return Ok(files);
         }
-    }
+
+		[HttpGet("{id}")]
+        [AllowAnonymous]
+		public async Task<ActionResult> GetFile(int id)
+		{
+			var file = await _fileService.GetFile(id);
+			if (file is null) 
+                return NotFound("File not found");
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(file?.FilePath!);
+
+			// Add the "Access-Control-Expose-Headers" header
+			Response.Headers.TryAdd("Content-Disposition", "attachment");
+
+			return File(fileBytes, file?.ContentType!, file?.FileName);
+		}
+	}
 }

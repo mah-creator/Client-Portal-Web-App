@@ -11,6 +11,8 @@ import {
   FileResponse,
   ApiError 
 } from '@/types/api';
+import { Router } from 'lucide-react';
+import { redirectDocument } from 'react-router-dom';
 
 export const API_BASE_URL = import.meta.env.REACT_APP_API_URL || 'http://localhost:56545';
 
@@ -52,8 +54,18 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      
       if (!response.ok) {
+        // If unauthorized, clear token and redirect to login
+        if (response.status === 401) {
+          this.clearToken();
+          try {
+            // Use window.location to force a navigation to the login page
+            window.location.href = '/login';
+          } catch (_) {
+            /* ignore */
+          }
+        }
+
         const errorData = await response.text();
         throw new ApiError({
           message: errorData || `HTTP error! status: ${response.status}`,
@@ -192,6 +204,15 @@ class ApiClient {
             }));
           }
         } else {
+          // If unauthorized (401), clear token and redirect to login
+          if (xhr.status === 401) {
+            this.clearToken();
+            try {
+              window.location.href = '/login';
+            } catch (_) {
+              /* ignore */
+            }
+          }
           reject(new ApiError({
             message: xhr.responseText || `HTTP error! status: ${xhr.status}`,
             status: xhr.status,

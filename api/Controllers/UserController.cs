@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
+using TaskStatus = ClientPortalApi.Models.TaskStatus;
 
 namespace ClientPortalApi.Controllers;
 
@@ -18,16 +21,11 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 {
 	[HttpGet("profile")]
 	[ProducesResponseType(typeof(ProfileDto), 200)]
-	[ProducesResponseType(typeof(ProblemDetails), 400)]
+	[ProducesResponseType(typeof(string), 400)]
 	public async Task<IActionResult> GetProfile()
 	{
-		var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-		if (userId == null)
-			return Problem(title: "Invalid user");
-
-		var user = dbContext.Users.Include(x => x.Profile).FirstOrDefault(u => u.Id == userId);
-
-		if (user == null) return Problem(title: "User wans't found");
+		var user = GetCurrentUser();
+		if (user == null) return Unauthorized();
 
 		return Ok(new ProfileDto
 		(
@@ -43,26 +41,23 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 	}
 
 	[HttpPut("profile")]
-	[ProducesResponseType(typeof(ProblemDetails), 400)]
-	[ProducesResponseType(typeof(ValidationProblemDetails), 400)]
+	[ProducesResponseType(typeof(string), 400)]
 	[ProducesResponseType(typeof(ProfileDto), 200)]
 	public async Task<IActionResult> UpdateProfile([FromBody]UpdateProfileDto request)
 	{
-		var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-		if (userId == null)
-			return Problem(title: "Invalid user");
+		var user = GetCurrentUser();
+		if (user == null) return Unauthorized();
 
-		var user = dbContext.Users.Include(x => x.Profile).FirstOrDefault(u => u.Id == userId);
-
-		if (user == null) return Problem(title: "User wasn't found");
-
-		if (!ModelState.IsValid)
-		{
-			return ValidationProblem(ModelState);
-		}
-
+		// validate phone number format if not null to empty
+		if(!string.IsNullOrEmpty(request.Phone))
+        {
+			if (!Regex.IsMatch(request.Phone, @"^\+?\d{1,15}$"))
+			{
+				return BadRequest("Invalid phone number format.");
+			}
+			user.Profile.Phone = request.Phone;
+        }
 		if(!string.IsNullOrEmpty(request.Name)) user.Name = request.Name;
-		if(!string.IsNullOrEmpty(request.Phone)) user.Profile.Phone = request.Phone;
 		if(!string.IsNullOrEmpty(request.Bio)) user.Profile.Bio = request.Bio;
 
 		await dbContext.SaveChangesAsync();
@@ -81,20 +76,14 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 	}
 
 	[HttpPost("avatar")]
-	[ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-	[ProducesResponseType(typeof(ProblemDetails), 400)]
+	[ProducesResponseType(typeof(string), 400)]
 	[ProducesResponseType(typeof(ProfileDto), 200)]
 	public async Task<IActionResult> UploadAvatar(IFormFile file)
 	{
-		var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-		if (userId == null)
-			return Problem(title: "Invalid user");
+		var user = GetCurrentUser();
+		if (user == null) return Unauthorized();
 
-		var user = dbContext.Users.Include(x => x.Profile).FirstOrDefault(u => u.Id == userId);
-
-		if (user == null) return Problem(title: "User wasn't found");
-
-		var filePath = $"/avatars/{userId}{Path.GetExtension(file.FileName)}";
+		var filePath = $"/avatars/{user.Id}{Path.GetExtension(file.FileName)}";
 
 		var absoluteFilePath = $"{env.WebRootPath}{Path.DirectorySeparatorChar}{filePath}";
 
@@ -117,5 +106,74 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 			CreatedAt: user.Profile.CreatedAt,
 			UpdatedAt: user.Profile.UpdatedAt
 		));
+	}
+	[HttpGet("stats")]
+	public async Task<IActionResult> GetUserStats()
+	{
+		var user = GetCurrentUser();
+		if (user == null) return Unauthorized();
+
+		var stats = user.Role switch
+		{
+			Role.Admin => await GetAdminStats(user),
+			Role.Customer => await GetCustomerStats(user),
+			Role.Freelancer => await GetFreelancerStats(user),
+			_ => null
+		};
+
+		return Ok(stats);
+	}
+
+	private async Task<UserStatsDto> GetFreelancerStats(User user)
+	{
+		var projects = dbContext.Projects
+			.Include(p => p.Tasks).Include(p => p.Members)
+			.Where(p => p.Members.Any(m => m.UserId == user.Id && m.Role == MemberRole.Collaborator))
+			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count() })
+			.Select(g => g.Key);
+
+		return new UserStatsDto
+		(
+			ProjectsCount: await projects.CountAsync(),
+			TasksCompleted: await projects.SumAsync(p => p.completedTasks),
+			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id)
+		);
+	}
+
+	private async Task<UserStatsDto> GetCustomerStats(User user)
+	{
+		var projects = dbContext.Projects
+			.Include(p => p.Tasks).Include(p => p.Members)
+			.Where(p => p.Members.Any(m => m.UserId == user.Id && m.Role == MemberRole.Viewer))
+			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count() })
+			.Select(g => g.Key);
+
+		return new UserStatsDto
+		(
+			ProjectsCount: await projects.CountAsync(),
+			TasksCompleted: await projects.SumAsync(p => p.completedTasks),
+			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id)
+		);
+	}
+
+	private async Task<UserStatsDto> GetAdminStats(User user)
+	{
+
+		return new UserStatsDto
+		(
+			ProjectsCount: await dbContext.Projects.CountAsync(),
+			TasksCompleted: await dbContext.TaskItems.CountAsync(t => t.Status == TaskStatus.Done),
+			FilesUploaded: await dbContext.Files.CountAsync()
+		);
+	}
+
+	private User? GetCurrentUser()
+	{
+		var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (userId == null)
+			return null;
+
+		var user = dbContext.Users.Include(x => x.Profile).FirstOrDefault(u => u.Id == userId);
+		return user;
 	}
 }

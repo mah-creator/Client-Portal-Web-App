@@ -95,7 +95,7 @@ namespace ClientPortalApi.Controllers
                     _db.ProjectMembers
                     .Where(mem => mem!.ProjectId == p.Id && mem!.Role == MemberRole.Viewer)
                     .FirstOrDefault()!.UserId
-                )?.Email!,
+                )?.Name!,
                 totalTasks == 0 ? 0 : completedTasks / ((float)totalTasks));
         }
     }
