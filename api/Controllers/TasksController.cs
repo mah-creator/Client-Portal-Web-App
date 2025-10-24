@@ -70,7 +70,7 @@ namespace ClientPortalApi.Controllers
         {
             var t = await _db.TaskItems.FirstOrDefaultAsync(x => x.Id == id && x.ProjectId == projectId);
             if (t == null) return NotFound();
-            if (Enum.TryParse<TaskStatus>(dto.Status, out var st))
+            if (Enum.TryParse<TaskStatus>(dto.Status, ignoreCase: true , out var st))
             {
                 t.Status = st;
                 await _db.SaveChangesAsync();
@@ -128,7 +128,7 @@ namespace ClientPortalApi.Controllers
             var projects = _db.ProjectMembers.Where(mem => mem.UserId == userId && mem.Role == MemberRole.Collaborator);
 
             var pendingTasks = projects
-            .Join(_db.TaskItems.Where(t => t.Status == TaskStatus.InProgress || t.Status == TaskStatus.Todo),
+            .Join(_db.TaskItems.Where(t => t.Status == TaskStatus.In_progress || t.Status == TaskStatus.Todo),
                     mem => mem.ProjectId,
                     t => t.ProjectId,
                     (mem, t) => t);

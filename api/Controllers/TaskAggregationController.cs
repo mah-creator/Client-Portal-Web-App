@@ -50,7 +50,7 @@ namespace ClientPortalApi.Controllers
             var projects = _db.ProjectMembers.Where(mem => mem.UserId == userId);
 
             var pendingTasks = projects
-            .Join(_db.TaskItems.Where(t => t.Status == TaskStatus.InProgress || t.Status == TaskStatus.Todo),
+            .Join(_db.TaskItems.Where(t => t.Status == TaskStatus.In_progress || t.Status == TaskStatus.Todo),
                     mem => mem.ProjectId,
                     t => t.ProjectId,
                     (mem, t) => t);

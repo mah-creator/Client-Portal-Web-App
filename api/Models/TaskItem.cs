@@ -1,7 +1,7 @@
 namespace ClientPortalApi.Models
 {
     public enum TaskStatus { 
-        Todo, InProgress, Done, Canceled 
+        Todo, In_progress, Done, Canceled, Pending_review
     }
 
     public class TaskItem
