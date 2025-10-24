@@ -33,7 +33,8 @@ namespace ClientPortalApi.Controllers
                         t.Id, t.ProjectId, t.Title, t.Description, Enum.GetName(t.Status), t.CreatedAt, DateTime.Now,
                         _db.Comments.OrderBy(c => c.CreatedAt).Include(c => c.User).Where(c => c.TaskId == t.Id).Select(c =>
                             new CommentResponse(c.Id.ToString(), c.User.Name, c.Body, c.CreatedAt)).ToList(), t.DueDate,
-                        _db.Users.FirstOrDefault(u => u.Id == _db.Projects.FirstOrDefault(p => p.Id == projectId).OwnerId).Name));
+                        _db.Users.FirstOrDefault(u => u.Id == _db.Projects.FirstOrDefault(p => p.Id == projectId).OwnerId).Name,
+                        t.DueDate.HasValue && t.Status != TaskStatus.Done && t.DueDate.Value < DateTime.UtcNow, _db.Files.Where(f => f.TaskId == t.Id).Count()));
 
             return Ok(tasks);
         }

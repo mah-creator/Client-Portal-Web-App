@@ -15,5 +15,6 @@ namespace ClientPortalApi.Models
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; }
+
     }
 }

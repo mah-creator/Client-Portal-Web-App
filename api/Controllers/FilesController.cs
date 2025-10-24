@@ -33,7 +33,7 @@ namespace ClientPortalApi.Controllers
             var projectTitle = _db.Projects.Find(projectId)?.Title;
             var uploaderName = _db.Users.Find(entity.UploaderId)?.Name;
 
-            return Ok(new FileResponse(entity.Id, entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path));
+            return Ok(new FileResponse(entity.Id, taskId!, entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path));
         }
 
         [HttpGet("task/{Id}")]
@@ -43,7 +43,7 @@ namespace ClientPortalApi.Controllers
             if (!_db.TaskItems.Any(t => t.Id == Id)) return BadRequest("Task wasn't found");
 
             var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.TaskId == Id).Select(f => new FileResponse(f.Id, f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.TaskId == Id).AsEnumerable().Select(f => new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path));
 
             return Ok(files);
         }
@@ -55,7 +55,7 @@ namespace ClientPortalApi.Controllers
 			if (!_db.Projects.Any(p => p.Id == Id)) return BadRequest("Project wasn't found");
 
 			var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.ProjectId == Id).Select(f => new FileResponse(f.Id, f.Filename, f.Project == null ? null : f.Project.Title, f.Size, f.Uploader == null ? null : f.Uploader.Name, f.UploadedAt, f.Path));
+                .Where(f => f.ProjectId == Id).AsEnumerable().Select(f => new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path));
 
             return Ok(files);
         }
@@ -73,9 +73,10 @@ namespace ClientPortalApi.Controllers
                 .AsEnumerable().Where(f => f.UploadedAt.Add(TimeSpan.FromHours(2)) > DateTime.UtcNow)
                 .Select(f => new FileResponse(
                     f.Id,
+                    f.TaskId!,
                     f.Filename,
-                    f.Project == null ? null : f.Project.Title, f.Size,
-                    f.Uploader == null ? null : f.Uploader.Name,
+                    f.Project?.Title!, f.Size,
+                    f.Uploader?.Name!,
                     f.UploadedAt, f.Path));
 
             return Ok(files);

@@ -83,12 +83,14 @@ namespace ClientPortalApi.Controllers
         private ProjectDto createProjectDto(Project p)
         {
             var totalTasks = _db.TaskItems.Where(t => t.ProjectId == p.Id).Count();
+            var canceledTasks = _db.TaskItems.Where(t => t.ProjectId == p.Id)
+                    .Where(t => t.Status == TaskStatus.Canceled).Count();
             var completedTasks = _db.TaskItems.Where(t => t.ProjectId == p.Id)
                     .Where(t => t.Status == TaskStatus.Done).Count();
 
             return new ProjectDto(
                 p.Id, p.Title, p.Description, p.OwnerId, Enum.GetName(p.Status), p.CreatedAt, p.DueDate,
-                totalTasks,
+                totalTasks - canceledTasks,
                 completedTasks,
                 _db.Users.FirstOrDefault(u => u.Id == p.OwnerId)?.Name!,
                 _db.Users.FirstOrDefault(u => u.Id ==
@@ -96,7 +98,7 @@ namespace ClientPortalApi.Controllers
                     .Where(mem => mem!.ProjectId == p.Id && mem!.Role == MemberRole.Viewer)
                     .FirstOrDefault()!.UserId
                 )?.Name!,
-                totalTasks == 0 ? 0 : completedTasks / ((float)totalTasks));
+                totalTasks == 0 ? 0 : completedTasks / ((float)totalTasks - canceledTasks));
         }
     }
 }
