@@ -19,14 +19,14 @@ namespace ClientPortalApi.Services
 
 			var filePath = Path.Combine(_env.WebRootPath, fileEntity.Path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
 
-			//(new FileExtensionContentTypeProvider()).TryGetContentType(filePath, out string? contentType); // mime type of file
+			(new FileExtensionContentTypeProvider()).TryGetContentType(filePath, out string? contentType); // mime type of file
 
 			return new FileAttr
 			{
 				FileName = fileEntity.Filename,
 				FilePath = filePath,
-				ContentType = "application/json" ?? "application/octet-stream"
-			}; 
+				ContentType = contentType ?? "application/octet-stream"
+			};
 		}
 
 		public async Task<FileEntity> SaveFileAsync(IFormFile file, string? projectId = null, string? taskId = null, string uploaderId = "")

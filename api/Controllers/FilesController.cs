@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ClientPortalApi.DTOs;
 using System.Net.Http.Headers;
 using System.Net;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace ClientPortalApi.Controllers
 {
@@ -17,7 +18,9 @@ namespace ClientPortalApi.Controllers
     {
         private readonly IFileService _fileService;
         private readonly AppDbContext _db;
-        public FilesController(IFileService fileService, AppDbContext db) { _fileService = fileService; _db = db; }
+		private readonly FileExtensionContentTypeProvider _ext;
+
+		public FilesController(IFileService fileService, AppDbContext db, FileExtensionContentTypeProvider ext) { _fileService = fileService; _db = db; _ext = ext; }
 
         [HttpPost("upload")]
         [ProducesResponseType(typeof(FileResponse), StatusCodes.Status200OK)]
@@ -33,7 +36,7 @@ namespace ClientPortalApi.Controllers
             var projectTitle = _db.Projects.Find(projectId)?.Title;
             var uploaderName = _db.Users.Find(entity.UploaderId)?.Name;
 
-            return Ok(new FileResponse(entity.Id, taskId!, entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path));
+            return Ok(new FileResponse(entity.Id, taskId!, entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path, file.ContentType));
         }
 
         [HttpGet("task/{Id}")]
@@ -41,23 +44,37 @@ namespace ClientPortalApi.Controllers
         public async Task<IActionResult> GetTaskFiles(string Id)
         {
             if (!_db.TaskItems.Any(t => t.Id == Id)) return BadRequest("Task wasn't found");
-
             var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.TaskId == Id).AsEnumerable().Select(f => new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path));
+                .Where(f => f.TaskId == Id).AsEnumerable().Select(f =>
+                {
+                    var contentType = getContentType(f.Path);
+					return new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path, contentType);
+                });
 
             return Ok(files);
         }
 
-        [HttpGet("project/{Id}")]
+		private string getContentType(string path)
+		{
+			_ext.TryGetContentType(path, out string? contentType);
+
+            return contentType ?? "application/octet-stream";
+		}
+
+		[HttpGet("project/{Id}")]
         [ProducesResponseType(typeof(FileResponse), StatusCodes.Status200OK)]
 		public async Task<IActionResult> GetProjectFiles(string Id)
         {
 			if (!_db.Projects.Any(p => p.Id == Id)) return BadRequest("Project wasn't found");
 
 			var files = _db.Files.Include(f => f.Uploader).Include(f => f.Project)
-                .Where(f => f.ProjectId == Id).AsEnumerable().Select(f => new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path));
+                .Where(f => f.ProjectId == Id).AsEnumerable().Select(f =>
+				{
+					var contentType = getContentType(f.Path);
+					return new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path, contentType);
+				});
 
-            return Ok(files);
+			return Ok(files);
         }
 
         [HttpGet("recent")]
@@ -71,15 +88,13 @@ namespace ClientPortalApi.Controllers
                 .Where(mem => mem.UserId == userId)
                 .Join(_db.Files, mem => mem.ProjectId, f => f.ProjectId, (mem, f) => f)
                 .AsEnumerable().Where(f => f.UploadedAt.Add(TimeSpan.FromHours(2)) > DateTime.UtcNow)
-                .Select(f => new FileResponse(
-                    f.Id,
-                    f.TaskId!,
-                    f.Filename,
-                    f.Project?.Title!, f.Size,
-                    f.Uploader?.Name!,
-                    f.UploadedAt, f.Path));
+				.Select(f =>
+				{
+					var contentType = getContentType(f.Path);
+					return new FileResponse(f.Id, f.TaskId!, f.Filename, f.Project?.Title!, f.Size, f.Uploader?.Name!, f.UploadedAt, f.Path, contentType);
+				});
 
-            return Ok(files);
+			return Ok(files);
         }
 
 		[HttpGet("{id}")]

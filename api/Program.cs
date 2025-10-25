@@ -8,12 +8,15 @@ using ClientPortalApi.Hubs;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using ClientPortalApi.Models;
+using Microsoft.AspNetCore.StaticFiles;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
