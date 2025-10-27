@@ -55,7 +55,7 @@ namespace ClientPortalApi.Controllers
                 p.Members.Where(m => m.Role == MemberRole.Viewer)
                          .Select(m => m.User.Name)
                          .FirstOrDefault()!,
-                completedTasks == 0 ? 0 : totalTasks/completedTasks
+                completedTasks == 0 ? 0 : completedTasks*100/totalTasks
             );
         });
 
