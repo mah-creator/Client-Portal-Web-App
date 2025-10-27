@@ -8,5 +8,7 @@ namespace ClientPortalApi.Models
         public string UserId { get; set; } = null!;
         public MemberRole Role { get; set; } = MemberRole.Viewer;
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
-    }
+        public Project Project { get; set; } = null!;
+		public User User { get; set; } = null!;
+	}
 }

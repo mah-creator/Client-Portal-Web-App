@@ -46,7 +46,7 @@ public class ProjectInvitationService(AppDbContext db, INotificationHubService n
 		await notify.SendNotificationToUser(inv.InviterId, new NotificationDto
 		{
 			Title = "Invitation accepted",
-			Message = $"{customer?.Name ?? customer?.Email ?? "Client"} accepted you invitation to project {projectName ?? ""}",
+			Message = $"{customer?.Name ?? customer?.Email ?? "Client"} accepted your invitation to project {projectName ?? ""}",
 			Type = NotificationType.invitation_accepted,
 		});
 		
@@ -80,7 +80,7 @@ public class ProjectInvitationService(AppDbContext db, INotificationHubService n
 		await notify.SendNotificationToUser(inv.InviterId, new NotificationDto
 		{
 			Title = "Invitation declined",
-			Message = $"{customer?.Name ?? customer?.Name?? "Client"} declined you invitation to project {projectName ?? ""}",
+			Message = $"{customer?.Name ?? customer?.Name?? "Client"} declined your invitation to project {projectName ?? ""}",
 			Type = NotificationType.invitation_declined,
 		});
 	}

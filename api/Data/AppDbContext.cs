@@ -48,6 +48,10 @@ namespace ClientPortalApi.Data
 				.HasForeignKey(i => i.ProjectId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<ProjectInvitation>().HasOne(i => i.Project).WithMany()
                 .HasForeignKey(i => i.ProjectId);
+            builder.Entity<ProjectMember>().HasOne(m => m.Project).WithMany(p => p.Members)
+				.HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<ProjectMember>().HasOne(m => m.User).WithMany(u => u.Projects)
+                .HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
 
 			builder.Entity<User>().Navigation(u  => u.Profile).IsRequired();
             builder.Entity<ProjectInvitation>().Navigation(i => i.Invitee).IsRequired();

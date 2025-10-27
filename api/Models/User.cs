@@ -24,6 +24,7 @@ namespace ClientPortalApi.Models
         public Profile Profile { get; set; }
 		public List<ProjectInvitation> Invitations { get; set; }
         public List<Notification> Notifications { get; set; }
+        public List<ProjectMember> Projects { get; set; }
 	}
 
     public class Profile

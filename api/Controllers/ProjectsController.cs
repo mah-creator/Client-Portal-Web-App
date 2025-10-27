@@ -27,75 +27,37 @@ namespace ClientPortalApi.Controllers
 		{
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-			// Get base projects
-			var owned = _db.Projects.Where(p => p.OwnerId == userId);
-			var memberProjIds = _db.ProjectMembers.Where(pm => pm.UserId == userId).Select(pm => pm.ProjectId);
-			var member = _db.Projects.Where(p => memberProjIds.Contains(p.Id));
-			var baseProjects = await owned.Union(member)
-				.OrderByDescending(p => p.CreatedAt)
-				.ToListAsync();
+            var projectDtos = _db.Projects
+        .Include(p => p.Members).ThenInclude(m => m.User)
+        .Include(p => p.Tasks)
+        .Where(p => p.Members.Any(m => m.UserId == userId))
+        .OrderByDescending(p => p.CreatedAt)
+        .AsEnumerable()
+        .Select(p =>
+        {
+            var totalTasks = p.Tasks.Count(t => t.Status != TaskStatus.Canceled);
+            var completedTasks = p.Tasks.Count(t => t.Status == TaskStatus.Done);
 
-			if (!baseProjects.Any())
-			{
-				return Ok(PagedList<ProjectDto>.CreatePagedList(Enumerable.Empty<ProjectDto>().AsQueryable(), page, pageSize));
-			}
-
-			var projectIds = baseProjects.Select(p => p.Id).ToList();
-
-			// Single query for all task counts
-			var taskCounts = await _db.TaskItems
-				.Where(t => projectIds.Contains(t.ProjectId))
-				.GroupBy(t => t.ProjectId)
-				.Select(g => new
-				{
-					ProjectId = g.Key,
-					TotalTasks = g.Count(),
-					CanceledTasks = g.Count(t => t.Status == TaskStatus.Canceled),
-					CompletedTasks = g.Count(t => t.Status == TaskStatus.Done)
-				})
-				.ToDictionaryAsync(x => x.ProjectId, x => x);
-
-			// Single query for all owners
-			var ownerIds = baseProjects.Select(p => p.OwnerId).Distinct().ToList();
-			var owners = await _db.Users
-				.Where(u => ownerIds.Contains(u.Id))
-				.ToDictionaryAsync(u => u.Id, u => u.Name);
-
-			// Single query for all viewers
-			var viewerInfo = await _db.ProjectMembers
-				.Where(pm => projectIds.Contains(pm.ProjectId) && pm.Role == MemberRole.Viewer)
-				.Join(_db.Users,
-					pm => pm.UserId,
-					u => u.Id,
-					(pm, u) => new { pm.ProjectId, ViewerName = u.Name })
-				.ToDictionaryAsync(x => x.ProjectId, x => x.ViewerName);
-
-			// Map to DTOs in memory
-			var projectDtos = baseProjects.Select(p =>
-			{
-				var counts = taskCounts.GetValueOrDefault(p.Id);
-				var totalTasks = counts?.TotalTasks ?? 0;
-				var canceledTasks = counts?.CanceledTasks ?? 0;
-				var completedTasks = counts?.CompletedTasks ?? 0;
-
-				var effectiveTotalTasks = totalTasks - canceledTasks;
-				var completionRate = effectiveTotalTasks == 0 ? 0 : completedTasks / (float)effectiveTotalTasks;
-
-				return new ProjectDto(
-					p.Id,
-					p.Title,
-					p.Description,
-					p.OwnerId,
-					Enum.GetName(p.Status)!,
-					p.CreatedAt,
-					p.DueDate,
-					effectiveTotalTasks,
-					completedTasks,
-					owners.GetValueOrDefault(p.OwnerId, "Unknown")!,
-					viewerInfo.GetValueOrDefault(p.Id, string.Empty)!,
-					completionRate
-				);
-			}).ToList();
+			return new ProjectDto
+            (
+                p.Id,
+                p.Title,
+                p.Description,
+                p.OwnerId,
+                Enum.GetName(p.Status)!,
+                p.CreatedAt,
+                p.DueDate,
+                totalTasks,
+                completedTasks,
+                p.Members.Where(m => m.Role == MemberRole.Collaborator)
+                         .Select(m => m.User.Name)
+                         .FirstOrDefault()!, // Gets first collaborator name or null
+                p.Members.Where(m => m.Role == MemberRole.Viewer)
+                         .Select(m => m.User.Name)
+                         .FirstOrDefault()!,
+                completedTasks == 0 ? 0 : totalTasks/completedTasks
+            );
+        });
 
 			return Ok(PagedList<ProjectDto>.CreatePagedList(projectDtos.AsQueryable(), page, pageSize));
 		}
