@@ -7,6 +7,8 @@ using ClientPortalApi.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using TaskStatus = ClientPortalApi.Models.TaskStatus;
+using ClientPortalApi.Services;
+using ClientPortalApi.Paging;
 namespace ClientPortalApi.Controllers
 {
     [ApiController]
@@ -15,20 +17,89 @@ namespace ClientPortalApi.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public ProjectsController(AppDbContext db) { _db = db; }
+		private readonly IProjectInvitationService _inv;
+
+		public ProjectsController(AppDbContext db, IProjectInvitationService inv) { _db = db; _inv = inv; }
 
         [HttpGet]
-        public async Task<IActionResult> List()
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var owned = _db.Projects.Where(p => p.OwnerId == userId);
-            var memberProjIds = _db.ProjectMembers.Where(pm => pm.UserId == userId).Select(pm => pm.ProjectId);
-            var member = _db.Projects.Where(p => memberProjIds.Contains(p.Id));
-            var projects = await owned.Union(member).ToListAsync();
-            return Ok(projects.Select(p => createProjectDto(p)));
-        }
+        [ProducesResponseType(typeof(PagedList<ProjectDto>), 200)]
+		public async Task<IActionResult> List(int? page, int? pageSize)
+		{
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        [HttpPost]
+			// Get base projects
+			var owned = _db.Projects.Where(p => p.OwnerId == userId);
+			var memberProjIds = _db.ProjectMembers.Where(pm => pm.UserId == userId).Select(pm => pm.ProjectId);
+			var member = _db.Projects.Where(p => memberProjIds.Contains(p.Id));
+			var baseProjects = await owned.Union(member)
+				.OrderByDescending(p => p.CreatedAt)
+				.ToListAsync();
+
+			if (!baseProjects.Any())
+			{
+				return Ok(PagedList<ProjectDto>.CreatePagedList(Enumerable.Empty<ProjectDto>().AsQueryable(), page, pageSize));
+			}
+
+			var projectIds = baseProjects.Select(p => p.Id).ToList();
+
+			// Single query for all task counts
+			var taskCounts = await _db.TaskItems
+				.Where(t => projectIds.Contains(t.ProjectId))
+				.GroupBy(t => t.ProjectId)
+				.Select(g => new
+				{
+					ProjectId = g.Key,
+					TotalTasks = g.Count(),
+					CanceledTasks = g.Count(t => t.Status == TaskStatus.Canceled),
+					CompletedTasks = g.Count(t => t.Status == TaskStatus.Done)
+				})
+				.ToDictionaryAsync(x => x.ProjectId, x => x);
+
+			// Single query for all owners
+			var ownerIds = baseProjects.Select(p => p.OwnerId).Distinct().ToList();
+			var owners = await _db.Users
+				.Where(u => ownerIds.Contains(u.Id))
+				.ToDictionaryAsync(u => u.Id, u => u.Name);
+
+			// Single query for all viewers
+			var viewerInfo = await _db.ProjectMembers
+				.Where(pm => projectIds.Contains(pm.ProjectId) && pm.Role == MemberRole.Viewer)
+				.Join(_db.Users,
+					pm => pm.UserId,
+					u => u.Id,
+					(pm, u) => new { pm.ProjectId, ViewerName = u.Name })
+				.ToDictionaryAsync(x => x.ProjectId, x => x.ViewerName);
+
+			// Map to DTOs in memory
+			var projectDtos = baseProjects.Select(p =>
+			{
+				var counts = taskCounts.GetValueOrDefault(p.Id);
+				var totalTasks = counts?.TotalTasks ?? 0;
+				var canceledTasks = counts?.CanceledTasks ?? 0;
+				var completedTasks = counts?.CompletedTasks ?? 0;
+
+				var effectiveTotalTasks = totalTasks - canceledTasks;
+				var completionRate = effectiveTotalTasks == 0 ? 0 : completedTasks / (float)effectiveTotalTasks;
+
+				return new ProjectDto(
+					p.Id,
+					p.Title,
+					p.Description,
+					p.OwnerId,
+					Enum.GetName(p.Status)!,
+					p.CreatedAt,
+					p.DueDate,
+					effectiveTotalTasks,
+					completedTasks,
+					owners.GetValueOrDefault(p.OwnerId, "Unknown")!,
+					viewerInfo.GetValueOrDefault(p.Id, string.Empty)!,
+					completionRate
+				);
+			}).ToList();
+
+			return Ok(PagedList<ProjectDto>.CreatePagedList(projectDtos.AsQueryable(), page, pageSize));
+		}
+		[HttpPost]
         [Authorize(Roles = nameof(Role.Freelancer))]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
@@ -37,7 +108,7 @@ namespace ClientPortalApi.Controllers
             {
                 Title = dto.Title,
                 Description = dto.Description,
-                OwnerId = userId,
+                OwnerId = userId!,
                 DueDate = dto.DueDate
             };
             _db.Projects.Add(project);
@@ -46,13 +117,13 @@ namespace ClientPortalApi.Controllers
             _db.ProjectMembers.Add(new ProjectMember
             {
                 ProjectId = project.Id,
-                UserId = userId,
+                UserId = userId!,
                 Role = MemberRole.Collaborator
             });
             await _db.SaveChangesAsync();
 
             return CreatedAtAction(nameof(Get), new { id = project.Id }, new ProjectDto(project.Id, project.Title, project.Description, project.OwnerId, project.Status.ToString(), project.CreatedAt, project.DueDate,
-                Freelancer: project.OwnerId));
+                Freelancer: project.OwnerId!));
         }
 
         [HttpGet("{id}")]
@@ -67,17 +138,27 @@ namespace ClientPortalApi.Controllers
         [HttpPost("{id}/invite")]
         public async Task<IActionResult> Invite(string id, [FromBody] string email)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var inviterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (inviterId == null) return Unauthorized();
+
+			var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null) return NotFound($"User '{email}' wasn't found");
 
-            if (await _db.ProjectMembers.AnyAsync(pm => pm.ProjectId == id && pm.UserId == user.Id))
+            if (await _db.Invitations.AnyAsync(i => 
+                i.ProjectId == id && i.InviteeId == user.Id && 
+                new[] { InvitationStatus.Pending, InvitationStatus.Accepted }.Contains(i.Status)))
             {
                 return BadRequest("Already invited");
             }
 
-            _db.ProjectMembers.Add(new ProjectMember { ProjectId = id, UserId = user.Id, Role = MemberRole.Viewer });
-            await _db.SaveChangesAsync();
-            return Ok();
+			if (await _db.ProjectMembers.AnyAsync(pm => pm.ProjectId == id && pm.UserId == user.Id))
+            {
+				return BadRequest("User is already a member of the project");
+			}
+
+            await _inv.SendInvitationAsync(id, inviterId, user.Id, MemberRole.Viewer);
+
+			return Ok();
         }
 
         private ProjectDto createProjectDto(Project p)
@@ -89,7 +170,7 @@ namespace ClientPortalApi.Controllers
                     .Where(t => t.Status == TaskStatus.Done).Count();
 
             return new ProjectDto(
-                p.Id, p.Title, p.Description, p.OwnerId, Enum.GetName(p.Status), p.CreatedAt, p.DueDate,
+                p.Id, p.Title, p.Description, p.OwnerId, Enum.GetName(p.Status)!, p.CreatedAt, p.DueDate,
                 totalTasks - canceledTasks,
                 completedTasks,
                 _db.Users.FirstOrDefault(u => u.Id == p.OwnerId)?.Name!,
@@ -101,4 +182,7 @@ namespace ClientPortalApi.Controllers
                 totalTasks == 0 ? 0 : completedTasks / ((float)totalTasks - canceledTasks));
         }
     }
+
+
+
 }

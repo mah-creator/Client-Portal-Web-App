@@ -1,0 +1,28 @@
+*Customer:
+Notification
+~Add customer~
+~Task status~
+
+*Quick Actions
+*Tasks:
+-Make Comment real time refresh
+
+Tasks:
+-Add Profile => portfolio
+~-Add task status (pending,inprogress,done)~
+~-Add approval from customer to make task is done~
+~-Failed task if date is end~
+-Add due date for tasks
+-Auto add store data
+
+Projects:
+-show all project for frelancee
+~-show customer name for freelancer~
+~-show freelancer name for customer~
+
+Notification:
+-send invitation for customer when freelance add him
+-hide notification icon bill badge
+
+-just one customer can you add on
+-project-Payment gate and wallet

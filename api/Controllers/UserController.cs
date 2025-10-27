@@ -129,14 +129,15 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 		var projects = dbContext.Projects
 			.Include(p => p.Tasks).Include(p => p.Members)
 			.Where(p => p.Members.Any(m => m.UserId == user.Id && m.Role == MemberRole.Collaborator))
-			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count() })
+			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count(), pendingTasks = p.Tasks.Where(t => t.Status == TaskStatus.Todo).Count() })
 			.Select(g => g.Key);
 
 		return new UserStatsDto
 		(
 			ProjectsCount: await projects.CountAsync(),
 			TasksCompleted: await projects.SumAsync(p => p.completedTasks),
-			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id)
+			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id),
+			TasksPending: await projects.SumAsync(p => p.pendingTasks)
 		);
 	}
 
@@ -145,14 +146,15 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 		var projects = dbContext.Projects
 			.Include(p => p.Tasks).Include(p => p.Members)
 			.Where(p => p.Members.Any(m => m.UserId == user.Id && m.Role == MemberRole.Viewer))
-			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count() })
+			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count(), pendingTasks = p.Tasks.Where(t => t.Status == TaskStatus.Todo).Count() })
 			.Select(g => g.Key);
 
 		return new UserStatsDto
 		(
 			ProjectsCount: await projects.CountAsync(),
 			TasksCompleted: await projects.SumAsync(p => p.completedTasks),
-			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id)
+			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id),
+			TasksPending: await projects.SumAsync(p => p.pendingTasks)
 		);
 	}
 
@@ -163,7 +165,9 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 		(
 			ProjectsCount: await dbContext.Projects.CountAsync(),
 			TasksCompleted: await dbContext.TaskItems.CountAsync(t => t.Status == TaskStatus.Done),
-			FilesUploaded: await dbContext.Files.CountAsync()
+			FilesUploaded: await dbContext.Files.CountAsync(),
+			TasksPending: await dbContext.TaskItems.CountAsync(t => t.Status == TaskStatus.Todo)
+			
 		);
 	}
 

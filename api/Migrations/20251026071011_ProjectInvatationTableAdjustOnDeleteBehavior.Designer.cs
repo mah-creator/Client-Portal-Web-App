@@ -3,6 +3,7 @@ using System;
 using ClientPortalApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClientPortalApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251026071011_ProjectInvatationTableAdjustOnDeleteBehavior")]
+    partial class ProjectInvatationTableAdjustOnDeleteBehavior
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -86,43 +89,6 @@ namespace ClientPortalApi.Migrations
                     b.ToTable("Files");
                 });
 
-            modelBuilder.Entity("ClientPortalApi.Models.Notification", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActionUrl")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Notifications");
-                });
-
             modelBuilder.Entity("ClientPortalApi.Models.Profile", b =>
                 {
                     b.Property<string>("Id")
@@ -183,15 +149,12 @@ namespace ClientPortalApi.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("ExpiresAt")
+                    b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("InviteeId")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("InviteeRole")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("InviterId")
                         .IsRequired()
@@ -213,10 +176,6 @@ namespace ClientPortalApi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("InviteeId");
-
-                    b.HasIndex("InviterId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("Invitations");
                 });
@@ -337,15 +296,6 @@ namespace ClientPortalApi.Migrations
                     b.Navigation("Uploader");
                 });
 
-            modelBuilder.Entity("ClientPortalApi.Models.Notification", b =>
-                {
-                    b.HasOne("ClientPortalApi.Models.User", null)
-                        .WithMany("Notifications")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("ClientPortalApi.Models.Profile", b =>
                 {
                     b.HasOne("ClientPortalApi.Models.User", null)
@@ -360,24 +310,10 @@ namespace ClientPortalApi.Migrations
                     b.HasOne("ClientPortalApi.Models.User", "Invitee")
                         .WithMany("Invitations")
                         .HasForeignKey("InviteeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ClientPortalApi.Models.User", "Inviter")
-                        .WithMany()
-                        .HasForeignKey("InviterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ClientPortalApi.Models.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Invitee");
-
-                    b.Navigation("Inviter");
                 });
 
             modelBuilder.Entity("ClientPortalApi.Models.ProjectMember", b =>
@@ -408,8 +344,6 @@ namespace ClientPortalApi.Migrations
             modelBuilder.Entity("ClientPortalApi.Models.User", b =>
                 {
                     b.Navigation("Invitations");
-
-                    b.Navigation("Notifications");
 
                     b.Navigation("Profile")
                         .IsRequired();
