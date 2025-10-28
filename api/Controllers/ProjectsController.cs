@@ -76,9 +76,17 @@ namespace ClientPortalApi.Controllers
 
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var filteredProjects = status != null ? _db.Projects.Where(p => p.Status == enumStatus) : _db.Projects;
+			//if (status != null)
+			//{
+				Func<string, bool> x = enumStatus switch
+				{
+					ProjectStatus.Completed => (string s) => Enum.Parse<ProjectStatus>(s, true) == ProjectStatus.Completed || Enum.Parse<ProjectStatus>(s, true) == ProjectStatus.Pending_Complete_Approval,
+					ProjectStatus.Deleted => (string s) => Enum.Parse<ProjectStatus>(s, true) == ProjectStatus.Deleted || Enum.Parse<ProjectStatus>(s, true) == ProjectStatus.Pending_Delete_Approval,
+					_ => (string s) => Enum.Parse<ProjectStatus>(s, true) == enumStatus
+				};
+			//}
 
-			var projectDtos = filteredProjects
+			var projectDtos = _db.Projects
             .Include(p => p.Members).ThenInclude(m => m.User)
 		    .Include(p => p.Tasks)
 		    .Where(p => p.Members.Any(m => m.UserId == userId))
@@ -109,6 +117,11 @@ namespace ClientPortalApi.Controllers
 				    completedTasks == 0 ? 0 : completedTasks * 100 / totalTasks
 			    );
 		    });
+
+			if (status != null)
+			{
+				projectDtos = projectDtos.Where(p => x(p.Status));
+			}
 
 			return Ok(PagedList<ProjectDto>.CreatePagedList(projectDtos.AsQueryable(), page, pageSize));
 		}
