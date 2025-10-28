@@ -189,7 +189,7 @@ namespace ClientPortalApi.Controllers
         }
 
 		[HttpPatch("{id}/status")]
-		public async Task<IActionResult> UpdateStatus(string id, [FromBody] string status)
+		public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateProjectStatusDto dto)
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null) return Unauthorized();
@@ -197,7 +197,7 @@ namespace ClientPortalApi.Controllers
 
 			var p = await _db.Projects.FirstOrDefaultAsync(x => x.Id == id && x.Id == id);
 			if (p == null) return NotFound();
-			if (Enum.TryParse<ProjectStatus>(status, ignoreCase: true, out var st))
+			if (Enum.TryParse<ProjectStatus>(dto.Status, ignoreCase: true, out var st))
 			{
 				p.Status = st;
 				await _db.SaveChangesAsync();
