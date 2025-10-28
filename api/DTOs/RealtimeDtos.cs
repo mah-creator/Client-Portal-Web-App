@@ -1,4 +1,6 @@
-﻿namespace ClientPortalApi.DTOs;
+﻿using ClientPortalApi.Models;
+
+namespace ClientPortalApi.DTOs;
 
 public static class ResourceType
 {
@@ -33,10 +35,3 @@ public struct NotificationDto
 	public ResourceMetadata Metadata { get; set; }
 }
 
-public struct ResourceMetadata
-{
-	public string ResourceType { get; set; }
-	public string ResourceId { get; set; }
-	public string ProjectId { get; set; }
-	public string TaskId { get; set; }
-}

@@ -1,4 +1,5 @@
 ﻿using ClientPortalApi.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClientPortalApi.Models;
 
@@ -17,4 +18,14 @@ public class Notification
 	public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 	public string? ActionUrl { get; set; } = null;
 	public NotificationStatus Status { get; set; } = NotificationStatus.NotRead;
+	public ResourceMetadata Metadata { get; set; }
+}
+
+[Owned]
+public class ResourceMetadata
+{
+	public string? ResourceType { get; set; }
+	public string? ResourceId { get; set; }
+	public string? ProjectId { get; set; }
+	public string? TaskId { get; set; }
 }

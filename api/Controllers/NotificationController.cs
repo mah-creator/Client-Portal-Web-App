@@ -25,6 +25,7 @@ public class NotificationController(AppDbContext db) : ControllerBase
 		var notifications = db.Notifications
 			.Where(n => n.UserId == userId && (n.Status == NotificationStatus.NotRead))
 			.OrderByDescending(n => n.Timestamp)
+			.AsNoTracking()
 			.Select(n => new NotificationDto
 			{
 				Id = n.Id,
@@ -32,7 +33,8 @@ public class NotificationController(AppDbContext db) : ControllerBase
 				Title = n.Title,
 				Message = n.Message,
 				Timestamp = n.Timestamp,
-				IsRead = n.Status == NotificationStatus.Read
+				IsRead = n.Status == NotificationStatus.Read,
+				Metadata = n.Metadata
 			});
 
 		return Ok(PagedList<NotificationDto>.CreatePagedList(notifications, page, pageSize));
@@ -59,7 +61,8 @@ public class NotificationController(AppDbContext db) : ControllerBase
 			Title = notification.Title,
 			Message = notification.Message,
 			Timestamp = notification.Timestamp,
-			IsRead = notification.Status == NotificationStatus.Read
+			IsRead = notification.Status == NotificationStatus.Read,
+			Metadata = notification.Metadata
 		});
 	}
 	[HttpPatch("read-all")]

@@ -48,6 +48,7 @@ public class NotificationHubService : INotificationHubService
 				Title = notification.Title,
 				Type = notification.Type,
 				UserId = userId,
+				Metadata = notification.Metadata
 			});
 
 			await _db.SaveChangesAsync();
@@ -82,6 +83,7 @@ public class NotificationHubService : INotificationHubService
 					Title = notification.Title,
 					Type = notification.Type,
 					UserId = userId,
+					Metadata = notification.Metadata
 				});
 
 

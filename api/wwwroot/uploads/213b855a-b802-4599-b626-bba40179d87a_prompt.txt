@@ -1,0 +1,73 @@
+1. Notification enpoints:
+GET /api/Notification
+PATCH /api/Notification/{id}/read
+
+here's the notification structure you'll receive:
+
+[
+  {
+    "type": "string",
+    "title": "string",
+    "message": "string",
+    "timestamp": "2025-10-26T15:32:38.794Z",
+    "actionUrl": "string",
+    "id": "string",
+    "isRead": true
+  }
+]
+
+you'll receive one of these notification types: task_status_changed, task_approved, project_status_updated, invited_to_project, invitation_accepted, invitation_declined, new_comment
+
+The signalR function name is: ReceiveNotification
+
+Hub endpointii is: /hubs/notifications
+
+2. Invitations endpoints are:
+GET /api/Invitation
+PUT /api/Invitation/{invitationId}/accept
+PUT /api/Invitation/{invitationId}/decline
+
+The invitations model is: 
+[
+  {
+    "id": "41523940-df1e-4b06-87c7-45b56e1d1d02",
+    "projectId": "79fc726b-8c9f-4e1e-935f-412f6f55f750",
+    "inviter": {
+      "id": "ec211ab3-e6f0-465f-ac1e-19300d622538",
+      "email": "freelancer@local.com",
+      "name": "Mahmoud Tahrawi2",
+      "role": "Freelancer"
+    },
+    "invitationDate": "2025-10-26T10:33:51.5997645",
+    "status": "Accepted",
+    "isExpired": false
+  },
+  {
+    "id": "55c1406f-a3f9-467d-b50d-2503e52930c6",
+    "projectId": "5ae79911-d882-442d-9b50-d0bf6297e820",
+    "inviter": {
+      "id": "ec211ab3-e6f0-465f-ac1e-19300d622538",
+      "email": "freelancer@local.com",
+      "name": "Mahmoud Tahrawi2",
+      "role": "Freelancer"
+    },
+    "invitationDate": "2025-10-26T10:38:03.1092773",
+    "status": "Declined",
+    "isExpired": false
+  },
+  {
+    "id": "c21994e4-4723-4a20-bf78-ef52859b4058",
+    "projectId": "48a213e5-e6de-4ea1-b618-7949b6978adb",
+    "inviter": {
+      "id": "ec211ab3-e6f0-465f-ac1e-19300d622538",
+      "email": "freelancer@local.com",
+      "name": "Mahmoud Tahrawi2",
+      "role": "Freelancer"
+    },
+    "invitationDate": "2025-10-26T10:38:15.1944346",
+    "status": "Accepted",
+    "isExpired": false
+  }
+]
+
+finally, the existing inviteToProject does create a notification record in the database, no need to change it

@@ -59,6 +59,7 @@ namespace ClientPortalApi.Data
 			builder.Entity<Project>().Property(p => p.Id).ValueGeneratedNever();
             builder.Entity<TaskItem>().Property(t => t.Id).ValueGeneratedNever();
             builder.Entity<Comment>().Property(c => c.Id).ValueGeneratedNever();
-        }
+            builder.Entity<Notification>().OwnsOne(n => n.Metadata);
+		}
     }
 }
