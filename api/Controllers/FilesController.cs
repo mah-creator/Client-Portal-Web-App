@@ -47,7 +47,14 @@ namespace ClientPortalApi.Controllers
                 {
                     Title = "File Uploaded",
                     Message = $"{uploaderName} uploaded a file '{entity.Filename}' to project '{projectTitle}'",
-                    Type = NotificationType.Info
+                    Type = NotificationType.Info,
+                    Metadata = new ResourceMetadata
+                    {
+						ResourceId = entity.Id.ToString(),
+						ResourceType = ResourceType.File,
+						ProjectId = entity.ProjectId!,
+						TaskId = entity.TaskId!
+					}
                 });
 
             return Ok(new FileResponse(entity.Id, taskId!, entity.Filename, projectTitle!, entity.Size, uploaderName!, entity.UploadedAt, entity.Path, file.ContentType));

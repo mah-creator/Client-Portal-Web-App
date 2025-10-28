@@ -70,7 +70,14 @@ namespace ClientPortalApi.Controllers
 				{
 					Title = "New task was created",
                     Message = $"{creator?.Name?? creator?.Email?? "Freelancer"} created task '{dto.Title}' for project {project?.Title}",
-                    Type = NotificationType.Info
+                    Type = NotificationType.Info,
+                    Metadata = new ResourceMetadata
+                    {
+						ProjectId = projectId,
+						ResourceType = ResourceType.Task,
+						ResourceId = t.Id,
+                        TaskId = t.Id
+					}
 				});
 
 			return CreatedAtAction(nameof(Get), new { projectId = projectId, id = t.Id }, t);
@@ -103,8 +110,15 @@ namespace ClientPortalApi.Controllers
                     {
                         Title = "Task progress",
                         Message = $"{user?.Name ?? user!.Email} updated task '{t.Title}' in project {project!.Title}, it's now {Enum.GetName(t.Status)?.ToLower()?.Replace('_', ' ')}",
-                        Type = NotificationType.Info
-                    });
+                        Type = NotificationType.Info,
+						Metadata = new ResourceMetadata
+						{
+							ProjectId = projectId,
+							ResourceType = ResourceType.Task,
+							ResourceId = t.Id,
+							TaskId = t.Id
+						}
+					});
                 return Ok(t);
             }
             return BadRequest("Invalid status");
@@ -136,7 +150,14 @@ namespace ClientPortalApi.Controllers
 				{
 				    Title = "New comment",
 				    Message = $"{user?.Name ?? user!.Email} commented on task '{t.Title}' in project {project!.Title}",
-                    Type = NotificationType.Info
+                    Type = NotificationType.Info,
+                    Metadata = new ResourceMetadata
+                    {
+                        ResourceId = newComment.Id,
+						ResourceType = ResourceType.Comment,
+                        ProjectId = project.Id,
+                        TaskId = t.Id
+					}
 				});
 
             await _notifications.SendCommentToUsers(_db.ProjectMembers.Where(p => p.ProjectId == t.ProjectId).Select(p => p.UserId).Except([userId]),

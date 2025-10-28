@@ -79,7 +79,7 @@ public class InvitationController(IProjectInvitationService inv, AppDbContext db
 	{
 		try
 		{
-			await inv.DeclineInvitationAsynt(invitationId);
+			await inv.DeclineInvitationAsyn(invitationId);
 		}
 		catch (InvalidOperationException ex)
 		{

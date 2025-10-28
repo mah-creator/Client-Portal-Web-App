@@ -64,7 +64,7 @@ namespace ClientPortalApi.Controllers
 		//	return Ok(PagedList<ProjectDto>.CreatePagedList(projectDtos.AsQueryable(), page, pageSize));
 		//}
 
-		[HttpGet()]
+		[HttpGet]
 		[ProducesResponseType(typeof(PagedList<ProjectDto>), 200)]
 		public async Task<IActionResult> Get(string? status, int? page, int? pageSize)
 		{
@@ -219,7 +219,13 @@ namespace ClientPortalApi.Controllers
 					{
 						Title = "Project progress",
 						Message = $"{user?.Name ?? user!.Email} updated project '{p!.Title}', it's now {Enum.GetName(p.Status)?.ToLower()?.Replace('_', ' ')}",
-						Type = NotificationType.Info
+						Type = NotificationType.Info,
+						Metadata = new ResourceMetadata
+						{
+							ResourceId = p.Id,
+							ResourceType = ResourceType.Project,
+							ProjectId = p.Id,
+						}
 					});
 				return Ok(createProjectDto(p));
 			}

@@ -48,11 +48,15 @@ public class ProjectInvitationService(AppDbContext db, INotificationHubService n
 			Title = "Invitation accepted",
 			Message = $"{customer?.Name ?? customer?.Email ?? "Client"} accepted your invitation to project {projectName ?? ""}",
 			Type = NotificationType.invitation_accepted,
+			Metadata = new ResourceMetadata
+			{
+				ProjectId = inv.ProjectId
+			}
 		});
 		
 	}
 
-	public async Task DeclineInvitationAsynt(string invitationId)
+	public async Task DeclineInvitationAsyn(string invitationId)
 	{
 		var inv = db.Invitations.Find(invitationId);
 		if (inv == null)
@@ -82,19 +86,24 @@ public class ProjectInvitationService(AppDbContext db, INotificationHubService n
 			Title = "Invitation declined",
 			Message = $"{customer?.Name ?? customer?.Name?? "Client"} declined your invitation to project {projectName ?? ""}",
 			Type = NotificationType.invitation_declined,
+			Metadata = new ResourceMetadata
+			{
+				ProjectId = inv.ProjectId
+			}
 		});
 	}
 
 	public async Task SendInvitationAsync(string projectId, string inviterId, string inviteeId, MemberRole role)
 	{
 		// add entry to invitation table
-		db.Invitations.Add(new ProjectInvitation
+		var inv = new ProjectInvitation
 		{
 			ProjectId = projectId,
 			InviterId = inviterId,
 			InviteeId = inviteeId,
 			InviteeRole = role,
-		});
+		};
+		db.Invitations.Add(inv);
 
 		await db.SaveChangesAsync();
 
@@ -107,6 +116,12 @@ public class ProjectInvitationService(AppDbContext db, INotificationHubService n
 			Title = "Project invitation",
 			Message = $"{inviter?.Name ?? inviter?.Email ?? "Freelancer"} invited you to project {projectName ?? ""}",
 			Type = NotificationType.invited_to_project,
+			Metadata = new ResourceMetadata
+			{
+				ResourceId = inv.Id,
+				ProjectId = projectId,
+				ResourceType = ResourceType.Invitation
+			}
 		});
 	}
 }
