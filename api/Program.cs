@@ -10,12 +10,22 @@ using Microsoft.AspNetCore.Identity;
 using ClientPortalApi.Models;
 using Microsoft.AspNetCore.StaticFiles;
 using ClientPortalApi.Services.Notifications;
+using Stripe;
+using TokenService = ClientPortalApi.Services.TokenService;
+using FileService = ClientPortalApi.Services.FileService;
+using Stripe.Forwarding;
+using Newtonsoft.Json;
+using ClientPortalApi.DTOs;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddSingleton<IStripeService, StripeService>();
 
 builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
 builder.Services.AddScoped<IProjectInvitationService, ProjectInvitationService>();
@@ -66,7 +76,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:8081",
 				"http://localhost:8082",
 				"https://preview--integrated-suite.lovable.app",
-				"https://preview-81218cb1--integrated-suite.lovable.app"
+				"https://preview-81218cb1--integrated-suite.lovable.app",
+				"https://preview--imagine-spark-feed.lovable.app/"
 			)
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -127,13 +138,31 @@ using (var scope = app.Services.CreateScope())
     DbSeeder.SeedAsync(db, new PasswordHasher<User>()).GetAwaiter().GetResult();
 }
 
+// setup 
+var completedPayment = new StripeCompletedSessionStatus();
+completedPayment.OnPaymentCompleted += (sessionId) =>
+{
+	using (var scope = app.Services.CreateScope())
+	{
+		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+		db.Projects.Where(p => p.StripeCheckoutSessionId == sessionId)
+		.ExecuteUpdate(s => s.SetProperty(p => p.Paid, true));
+	};
+};
+
+app.MapPost("/stripe/webhook", async (context) =>
+{
+	using var reader = new StreamReader(context.Request.Body);
+	var body = await reader.ReadToEndAsync();
+	var @event = JsonConvert.DeserializeObject<CompletedStripeSessionEvent>(body);
+	completedPayment.CompletePayment(@event?.Data.Object.Id!, @event?.Data.Object.Status!, @event?.Type!);
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-
 
 app.UseCors("SignalRCors");
 

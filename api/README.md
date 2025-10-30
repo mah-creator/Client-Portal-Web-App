@@ -17,4 +17,16 @@ How to run:
    dotnet ef database update
    dotnet run
    ```
-3. API will run at `https://localhost:5001` or as configured.
+**The Strip's secret key is read through the project's secret storage
+In order to run the project properly, you need to store your Stripe secret key in the secret storage.**
+Follow these steps to do so:
+1) Enable secret storage
+    ```.NET CLI
+    dotnet user-secrets init
+    ```
+2) Set the `ClientId` and `ClientSecret` secrets
+
+    ``` .NET CLI
+    dotnet user-secrets set "Stripe:SecretKey" "your-stripe-secret-key"
+    ```
+**That's it, you're ready to go!**

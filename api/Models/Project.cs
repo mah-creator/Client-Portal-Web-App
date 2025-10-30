@@ -14,5 +14,11 @@ namespace ClientPortalApi.Models
 
         public List<ProjectMember> Members { get; set; } = new();
         public List<TaskItem> Tasks { get; set; } = new();
-    }
+
+        // stripe specific properties that map this project to a stripe product object
+        public string? StripeProductId { get; set; } = null!;
+        public string? StripePriceId { get; set; } = null!;
+        public string? StripeCheckoutSessionId { get; set; } = null!;
+        public bool Paid { get; set; } = false;
+	}
 }

@@ -25,6 +25,8 @@ namespace ClientPortalApi.Models
 		public List<ProjectInvitation> Invitations { get; set; }
         public List<Notification> Notifications { get; set; }
         public List<ProjectMember> Projects { get; set; }
+
+        public string StripeCustomerId { get; set; } = null!;
 	}
 
     public class Profile

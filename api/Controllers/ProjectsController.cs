@@ -15,54 +15,19 @@ namespace ClientPortalApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class ProjectsController : ControllerBase
+	public class ProjectsController : ControllerBase
     {
         private readonly AppDbContext _db;
 		private readonly IProjectInvitationService _inv;
 		private readonly INotificationHubService _notify;
+		private readonly IStripeService _stripe;
 
-		public ProjectsController(AppDbContext db, IProjectInvitationService inv, INotificationHubService notify) { _db = db; _inv = inv; _notify = notify; }
+		public ProjectsController(
+			AppDbContext db,
+			IProjectInvitationService inv,
+			INotificationHubService notify,
+			IStripeService stripe) { _db = db; _inv = inv; _notify = notify; _stripe = stripe;}
 
-  //      [HttpGet]
-  //      [ProducesResponseType(typeof(PagedList<ProjectDto>), 200)]
-		//public async Task<IActionResult> List(int? page, int? pageSize)
-		//{
-		//	var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-  //          var projectDtos = _db.Projects
-  //      .Include(p => p.Members).ThenInclude(m => m.User)
-  //      .Include(p => p.Tasks)
-  //      .Where(p => p.Members.Any(m => m.UserId == userId))
-  //      .OrderByDescending(p => p.CreatedAt)
-  //      .AsEnumerable()
-  //      .Select(p =>
-  //      {
-  //          var totalTasks = p.Tasks.Count(t => t.Status != TaskStatus.Canceled);
-  //          var completedTasks = p.Tasks.Count(t => t.Status == TaskStatus.Done);
-
-		//	return new ProjectDto
-  //          (
-  //              p.Id,
-  //              p.Title,
-  //              p.Description,
-  //              p.OwnerId,
-  //              Enum.GetName(p.Status)!,
-  //              p.CreatedAt,
-  //              p.DueDate,
-  //              totalTasks,
-  //              completedTasks,
-  //              p.Members.Where(m => m.Role == MemberRole.Collaborator)
-  //                       .Select(m => m.User.Name)
-  //                       .FirstOrDefault()!, // Gets first collaborator name or null
-  //              p.Members.Where(m => m.Role == MemberRole.Viewer)
-  //                       .Select(m => m.User.Name)
-  //                       .FirstOrDefault()!,
-  //              completedTasks == 0 ? 0 : completedTasks*100/totalTasks
-  //          );
-  //      });
-
-		//	return Ok(PagedList<ProjectDto>.CreatePagedList(projectDtos.AsQueryable(), page, pageSize));
-		//}
 
 		[HttpGet]
 		[ProducesResponseType(typeof(PagedList<ProjectDto>), 200)]
@@ -140,7 +105,14 @@ namespace ClientPortalApi.Controllers
                 DueDate = dto.DueDate
             };
             _db.Projects.Add(project);
-            await _db.SaveChangesAsync();
+            var savedProject = await _db.SaveChangesAsync(); // number of entries written into the database
+			if (savedProject == 1)
+			{
+				var stripeProduct = await _stripe.CreateProductAsync(project.Title, project.Description!, 10000, "usd");
+				project.StripeProductId = stripeProduct.ProductId;
+				project.StripePriceId = stripeProduct.PriceId;
+			}
+
 
             _db.ProjectMembers.Add(new ProjectMember
             {
@@ -231,6 +203,30 @@ namespace ClientPortalApi.Controllers
 			}
 			return BadRequest("Invalid status");
 		}
+
+		[AllowAnonymous]
+		[HttpGet("{id}/complete")]
+		public async Task<IActionResult> CompleteProject(string id)
+		{
+			var project = _db.Projects.Find(id);
+
+			if (project == null) return NotFound();
+
+			if (project?.Status == ProjectStatus.Completed) return BadRequest("Project is completed");
+
+			var session = await _stripe.GetSessionAsync(new StripeProduct
+			{
+				PriceId = project!.StripePriceId!,
+				ProductId = project.StripeProductId!
+			});
+
+			project.StripeCheckoutSessionId = session.Id;
+			await _db.SaveChangesAsync();
+
+			return Redirect(session.Url);
+
+		}
+
 
 		private ProjectDto createProjectDto(Project p)
         {
