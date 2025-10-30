@@ -73,11 +73,7 @@ builder.Services.AddCors(options =>
 	options.AddPolicy("SignalRCors", policy =>
 	{
         policy.WithOrigins(
-                "http://localhost:8081",
-				"http://localhost:8082",
-				"https://preview--integrated-suite.lovable.app",
-				"https://preview-81218cb1--integrated-suite.lovable.app",
-				"https://preview--imagine-spark-feed.lovable.app/"
+				Environment.GetEnvironmentVariable("ASPNETCORE_REACTAPPURL")!
 			)
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -125,7 +121,6 @@ builder.Services.AddAuthentication(options =>
 // DI
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 
 var app = builder.Build();

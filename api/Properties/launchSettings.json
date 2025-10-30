@@ -1,12 +1,21 @@
 {
   "profiles": {
-    "ClientPortalApi": {
+    "LocalDev": {
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_REACTAPPURL": "http://localhost:8081"
       },
       "applicationUrl": "https://localhost:56544;http://localhost:56545"
-    }
+    },
+    "LiveDev": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_REACTAPPURL": "https://preview--imagine-spark-feed.lovable.app"
+      },
+      "applicationUrl": "https://localhost:56544;http://localhost:56545"
+    }    
   }
 }

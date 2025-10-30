@@ -13,12 +13,14 @@ public interface IStripeService
 
 public class StripeService : IStripeService
 {
+	IConfiguration _configuration;
 	public StripeService(IConfiguration configuration)
 	{
-		StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
+		_configuration = configuration;
 	}
 	public async Task<string> CreateCustomerAsync(string email, string name)
 	{
+		StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
 		var optionsCustomer = new CustomerCreateOptions
 		{
 			Email = email,
@@ -33,6 +35,7 @@ public class StripeService : IStripeService
 
 	public async Task<StripeProduct> CreateProductAsync(string name, string description, int price, string currency)
 	{
+		StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
 		var client = new StripeClient();
 		var optioinsProduct = new ProductCreateOptions
 		{
@@ -55,10 +58,12 @@ public class StripeService : IStripeService
 
 	public async Task<Session> GetSessionAsync(StripeProduct product)
 	{
+		StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
+
 		var options = new SessionCreateOptions
 		{
-			SuccessUrl = "http://localhost:8081/",
-			LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+			SuccessUrl = Environment.GetEnvironmentVariable("ASPNETCORE_REACTAPPURL"),
+			LineItems = new List<SessionLineItemOptions>
 			{
 				new SessionLineItemOptions
 				{
