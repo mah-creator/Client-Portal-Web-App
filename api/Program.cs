@@ -141,7 +141,9 @@ completedPayment.OnPaymentCompleted += (sessionId) =>
 	{
 		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 		db.Projects.Where(p => p.StripeCheckoutSessionId == sessionId)
-		.ExecuteUpdate(s => s.SetProperty(p => p.Paid, true));
+		.ExecuteUpdate(s => s
+		.SetProperty(p => p.Paid, true)
+		.SetProperty(p => p.Status, ProjectStatus.Completed));
 	};
 };
 

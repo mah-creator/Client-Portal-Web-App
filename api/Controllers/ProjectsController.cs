@@ -204,8 +204,9 @@ namespace ClientPortalApi.Controllers
 			return BadRequest("Invalid status");
 		}
 
-		[AllowAnonymous]
+
 		[HttpGet("{id}/complete")]
+		[AllowAnonymous]
 		public async Task<IActionResult> CompleteProject(string id)
 		{
 			var project = _db.Projects.Find(id);
