@@ -20,5 +20,7 @@ namespace ClientPortalApi.Models
         public string? StripePriceId { get; set; } = null!;
         public string? StripeCheckoutSessionId { get; set; } = null!;
         public bool Paid { get; set; } = false;
+        public int Price { get; set; } = default!;
+		public string Currency { get; set; } = default!;
 	}
 }

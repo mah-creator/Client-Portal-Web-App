@@ -99,5 +99,7 @@ public class InvitationController(IProjectInvitationService inv, AppDbContext db
 			new UserDto(invitation.Inviter.Id, invitation.Inviter.Email, invitation.Inviter.Name!, Enum.GetName(invitation.Inviter.Role)!),
 			invitation.SentAt,
 			Enum.GetName(invitation.Status)!,
-			invitation.ExpiresAt <= DateTime.UtcNow);
+			invitation.ExpiresAt <= DateTime.UtcNow,
+			invitation.Project.Price,
+			invitation.Project.Currency);
 }

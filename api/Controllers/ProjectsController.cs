@@ -102,13 +102,15 @@ namespace ClientPortalApi.Controllers
                 Title = dto.Title,
                 Description = dto.Description,
                 OwnerId = userId!,
-                DueDate = dto.DueDate
-            };
+                DueDate = dto.DueDate,
+				Price = dto.Price,
+				Currency = dto.Currency
+			};
             _db.Projects.Add(project);
             var savedProject = await _db.SaveChangesAsync(); // number of entries written into the database
 			if (savedProject == 1)
 			{
-				var stripeProduct = await _stripe.CreateProductAsync(project.Title, project.Description!, 10000, "usd");
+				var stripeProduct = await _stripe.CreateProductAsync(project.Title, project.Description!, dto.Price * 100, dto.Currency); // price in cents
 				project.StripeProductId = stripeProduct.ProductId;
 				project.StripePriceId = stripeProduct.PriceId;
 			}
