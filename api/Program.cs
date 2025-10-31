@@ -18,6 +18,7 @@ using Newtonsoft.Json;
 using ClientPortalApi.DTOs;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using static ClientPortalApi.Utils.Money;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -140,10 +141,34 @@ completedPayment.OnPaymentCompleted += (sessionId) =>
 	using (var scope = app.Services.CreateScope())
 	{
 		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-		db.Projects.Where(p => p.StripeCheckoutSessionId == sessionId)
+		var notify = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+		var projects = db.Projects.Where(p => p.StripeCheckoutSessionId == sessionId);
+		projects
 		.ExecuteUpdate(s => s
 		.SetProperty(p => p.Paid, true)
 		.SetProperty(p => p.Status, ProjectStatus.Completed));
+
+		var project = projects.First();
+
+		if(project != null)
+        {
+			notify.SendNotificationToUser(
+				db.ProjectMembers
+				.Where(pm => pm.Role == MemberRole.Collaborator)
+				.First(pm => pm.ProjectId == project.Id).UserId,
+				new NotificationDto
+				{
+					Title = "Payment collected",
+					Message = $"A payment of amount {FormatPrice(project.Price, project.Currency)} was collected for project {project.Title}",
+					Type = NotificationType.Info,
+					Metadata = new ResourceMetadata
+					{
+						ResourceId = project?.Id,
+						ResourceType = ResourceType.Project,
+						ProjectId = project?.Id
+					}
+				});
+        }
 	};
 };
 
