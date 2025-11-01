@@ -19,12 +19,14 @@ namespace ClientPortalApi.Controllers
         private readonly IConfiguration _config;
         private readonly IPasswordHasher<User> _hasher;
         private readonly IPasswordValidator<User> _validator;
-        public AuthController(AppDbContext db, ITokenService token, IConfiguration config, IPasswordHasher<User> hasher)
-        {
-            _db = db; _token = token; _config = config; _hasher = hasher;
-        }
+        private readonly IStripeService _stripe;
+        public AuthController(AppDbContext db, ITokenService token, IConfiguration config, IPasswordHasher<User> hasher, IStripeService stripe)
+		{
+			_db = db; _token = token; _config = config; _hasher = hasher;
+			_stripe = stripe;
+		}
 
-        [HttpPost("login")]
+		[HttpPost("login")]
         [ProducesResponseType(typeof(AuthResponse), 200)]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
@@ -55,8 +57,13 @@ namespace ClientPortalApi.Controllers
             };
             user.PasswordHash = _hasher.HashPassword(user, req.Password);
 
+            var customerStripeId = await _stripe.CreateCustomerAsync(user.Email, user.Name);
+            user.StripeCustomerId = customerStripeId;
+
             _db.Users.Add(user);
+
             await _db.SaveChangesAsync();
+            
 
             return await Login(new LoginRequest(req.Email, req.Password));
 		}
