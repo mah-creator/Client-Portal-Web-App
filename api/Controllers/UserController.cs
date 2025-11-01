@@ -129,7 +129,7 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 		var projects = dbContext.Projects
 			.Include(p => p.Tasks).Include(p => p.Members)
 			.Where(p => p.Members.Any(m => m.UserId == user.Id && m.Role == MemberRole.Collaborator))
-			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count(), pendingTasks = p.Tasks.Where(t => t.Status == TaskStatus.Todo).Count() })
+			.GroupBy(p => new { projectId = p.Id, completedTasks = p.Tasks.Where(t => t.Status == TaskStatus.Done).Count(), pendingTasks = p.Tasks.Where(t => t.Status == TaskStatus.Todo).Count(), revenue = p.Paid ? p.Price : 0 })
 			.Select(g => g.Key);
 
 		return new UserStatsDto
@@ -137,7 +137,8 @@ public class UserController(AppDbContext dbContext, IWebHostEnvironment env) : C
 			ProjectsCount: await projects.CountAsync(),
 			TasksCompleted: await projects.SumAsync(p => p.completedTasks),
 			FilesUploaded: await dbContext.Files.CountAsync(f => f.UploaderId == user.Id),
-			TasksPending: await projects.SumAsync(p => p.pendingTasks)
+			TasksPending: await projects.SumAsync(p => p.pendingTasks),
+			Revenue: await projects.SumAsync(p => p.revenue)
 		);
 	}
 

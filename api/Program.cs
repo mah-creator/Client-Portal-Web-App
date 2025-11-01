@@ -19,6 +19,7 @@ using ClientPortalApi.DTOs;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using static ClientPortalApi.Utils.Money;
+using System.Text.Unicode;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -185,6 +186,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.Use(async (context, next) =>
+{
+	try
+	{
+		await next(context);
+	}
+	catch (Exception e)
+	{
+		context.Response.StatusCode = 400;
+		await context.Response.WriteAsync(e.Message);
+	}
+	// return Task.CompletedTask;
+});
 
 app.UseCors("SignalRCors");
 
