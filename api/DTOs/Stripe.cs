@@ -12,16 +12,16 @@ public class StripeProduct
 	public string PriceId { get; set; } = null!;
 }
 
-public delegate void StripePaymentCompletedHandler(string sessionId);
+public delegate void StripePaymentCompletedHandler(string paymentIntent, string sessionId);
 
 public class StripeCompletedSessionStatus
 {
 	public event StripePaymentCompletedHandler OnPaymentCompleted;
 
-	public void CompletePayment(string sessionId, string status, string eventType)
+	public void CompletePayment(string paymentIntent, string sessionId, string status, string eventType)
 	{
 		if (eventType == "checkout.session.completed" && status != null && status.Equals("complete", StringComparison.OrdinalIgnoreCase))
-			OnPaymentCompleted?.Invoke(sessionId);
+			OnPaymentCompleted?.Invoke(paymentIntent, sessionId);
 	}
 }
 

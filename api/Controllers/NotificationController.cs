@@ -34,7 +34,8 @@ public class NotificationController(AppDbContext db) : ControllerBase
 				Message = n.Message,
 				Timestamp = n.Timestamp,
 				IsRead = n.Status == NotificationStatus.Read,
-				Metadata = n.Metadata
+				Metadata = n.Metadata,
+				ActionUrl = n.ActionUrl
 			});
 
 		return Ok(PagedList<NotificationDto>.CreatePagedList(notifications, page, pageSize));

@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using static ClientPortalApi.Utils.Money;
 using System.Text.Unicode;
+using Stripe.Checkout;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -137,7 +138,7 @@ using (var scope = app.Services.CreateScope())
 
 // setup 
 var completedPayment = new StripeCompletedSessionStatus();
-completedPayment.OnPaymentCompleted += (sessionId) =>
+completedPayment.OnPaymentCompleted += (paymentIntent, sessionId) =>
 {
 	using (var scope = app.Services.CreateScope())
 	{
@@ -151,8 +152,8 @@ completedPayment.OnPaymentCompleted += (sessionId) =>
 
 		var project = projects.First();
 
-		if(project != null)
-        {
+		if (project != null)
+		{
 			notify.SendNotificationToUser(
 				db.ProjectMembers
 				.Where(pm => pm.Role == MemberRole.Collaborator)
@@ -169,7 +170,26 @@ completedPayment.OnPaymentCompleted += (sessionId) =>
 						ProjectId = project?.Id
 					}
 				});
-        }
+
+			var serviceCheckout = new SessionService();
+			var session = serviceCheckout.Get(sessionId);
+			var serviceIntent = new PaymentIntentService();
+			var intent = serviceIntent.Get(session.PaymentIntentId);
+			var serviceCharge = new ChargeService();
+			var charge = serviceCharge.Get(intent.LatestChargeId);
+
+			notify.SendNotificationToUser(
+				db.ProjectMembers
+				.Where(pm => pm.Role == MemberRole.Viewer)
+				.First(pm => pm.ProjectId == project.Id).UserId,
+				new NotificationDto
+				{
+					Title = "Payment invoice",
+					Message = $"Your payment has been processed successfully, here's your receipts",
+					Type = "invoice",
+					ActionUrl = charge.ReceiptUrl
+				});
+		}
 	};
 };
 
@@ -178,7 +198,7 @@ app.MapPost("/stripe/webhook", async (context) =>
 	using var reader = new StreamReader(context.Request.Body);
 	var body = await reader.ReadToEndAsync();
 	var @event = JsonConvert.DeserializeObject<CompletedStripeSessionEvent>(body);
-	completedPayment.CompletePayment(@event?.Data.Object.Id!, @event?.Data.Object.Status!, @event?.Type!);
+	completedPayment.CompletePayment(@event?.Data?.Object?.PaymentIntent!, @event?.Data.Object.Id!, @event?.Data.Object.Status!, @event?.Type!);
 });
 
 if (app.Environment.IsDevelopment())
@@ -198,7 +218,6 @@ app.Use(async (context, next) =>
 		context.Response.StatusCode = 400;
 		await context.Response.WriteAsync(e.Message);
 	}
-	// return Task.CompletedTask;
 });
 
 app.UseCors("SignalRCors");

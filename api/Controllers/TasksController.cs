@@ -150,7 +150,7 @@ namespace ClientPortalApi.Controllers
 				{
 				    Title = "New comment",
 				    Message = $"{user?.Name ?? user!.Email} commented on task '{t.Title}' in project {project!.Title}",
-                    Type = NotificationType.Info,
+                    Type = NotificationType.new_comment,
                     Metadata = new ResourceMetadata
                     {
                         ResourceId = newComment.Id,
