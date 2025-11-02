@@ -13,6 +13,7 @@ import FreelancerDashboard from "./pages/FreelancerDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProjectWorkspace from "./pages/ProjectWorkspace";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 // Auth Context
@@ -33,7 +34,7 @@ export const AuthContext = React.createContext<{
 const queryClient = new QueryClient();
 
 const App = () => {
-    const { user, login, signup, logout, loading } = useAuth();
+  const { user, login, signup, logout, loading } = useAuth();
   
   console.log('App.tsx - Current user:', user);
   console.log('App.tsx - User role:', user?.role);
@@ -63,12 +64,16 @@ const App = () => {
                   }
                 })()
               ) : <Login />} />
+              <Route path="/project/:id" element={
+                user ? <ProjectWorkspace /> : <Login />
+              } />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/freelancer" element={<FreelancerDashboard />} />
               <Route path="/customer" element={<CustomerDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/project/:id" element={<ProjectWorkspace />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -83,7 +83,7 @@ export const useAuth = () => {
     }
   };
 
-    const signup = async (userData: SignupRequest) => {
+  const signup = async (userData: SignupRequest) => {
     try {
       setLoading(true);
       await apiClient.signup(userData);

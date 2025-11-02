@@ -1,8 +1,17 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AuthContext } from "../App";
 import { 
   Users, 
@@ -16,11 +25,18 @@ import {
   UserX,
   Settings,
   BarChart3,
-  Clock
+  Clock,
+  UserCircle
 } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { API_BASE_URL } from "@/lib/api-client";
+import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 
 const AdminDashboard = () => {
+  const { profile } = useProfile();
+  const [avatarTimestamp] = useState(Date.now());
   const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const stats = [
     { label: "Total Users", value: "124", change: "+12%", icon: Users, trend: "up" },
@@ -83,25 +99,43 @@ const AdminDashboard = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-danger rounded-full"></span>
-              </Button>
+              <NotificationsDropdown />
               
-              <div className="flex items-center gap-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src="" />
-                  <AvatarFallback>{user?.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div className="text-sm">
-                  <div className="font-medium">{user?.name}</div>
-                  <div className="text-muted-foreground">{user?.role}</div>
-                </div>
-              </div>
-              
-              <Button variant="ghost" size="sm" onClick={logout}>
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="w-8 h-8">
+                    <AvatarImage 
+                      src={profile?.avatarUrl ? `${API_BASE_URL}${profile.avatarUrl}?t=${avatarTimestamp}` : ''} 
+                    />
+                    <AvatarFallback>
+                      {user?.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                    {/* <Avatar className="w-8 h-8">
+                      <AvatarImage src="" />
+                      <AvatarFallback>{user?.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar> */}
+                    <div className="text-sm text-left">
+                      <div className="font-medium">{profile?.name}</div>
+                      <div className="text-muted-foreground">{user?.role}</div>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
