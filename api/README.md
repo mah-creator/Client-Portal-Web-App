@@ -24,7 +24,7 @@ Follow these steps to do so:
     ```.NET CLI
     dotnet user-secrets init
     ```
-2) Set the `ClientId` and `ClientSecret` secrets
+2) Set the Stripe `SecretKey` secret
 
     ``` .NET CLI
     dotnet user-secrets set "Stripe:SecretKey" "your-stripe-secret-key"
